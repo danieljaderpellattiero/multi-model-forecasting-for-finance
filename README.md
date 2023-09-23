@@ -18,20 +18,31 @@ Finally, a software that can effectively and efficiently combine these algorithm
 
 ### WSAEs-LSTM ( model №1 )
 
-#### How to use it
+#### Paper
+
+- [Recurrent Neural Networks for Financial Time-Series modelling](https://ieeexplore.ieee.org/abstract/document/8545666)
+
+### CEEMDAN-LSTM ( model №2 )
+
+#### Papers
+
+- [Financial time series forecasting model based on CEEMDAN and LSTM](https://www.sciencedirect.com/science/article/abs/pii/S0378437118314985)
+
+- [Carbon price forecasting based on CEEMDAN and LSTM](https://www.sciencedirect.com/science/article/abs/pii/S0306261922000782?via=ihub)
+
+### How to use them
 
 1. Open the project folder using a Python IDE. ( _preferably [PyCharm](https://www.jetbrains.com/pycharm/)_ )
-2. Install the dependencies.
-3. Open the file `Main.py` and insert inside the second constructor parameter all the desired stocks' tickers as strings. ( _just like the pre-inserted ticker "MSFT"_ )
+2. Install the required dependencies.
+3. Open the `Main.py` file and insert, inside the second constructor parameter, all the desired stocks' tickers as strings. ( _just like the pre-inserted ticker "MSFT"_ )
 4. Launch the model using the same file.
 
-#### Further notes about the model
+### Further notes about the models
 
-- The model will print out step-by-step notifications in the terminal from which it was launched.
-- The model will locally save the stocks data, in order to allow multiple models to be built from them. ( _data will be located inside the `./data` folder_ )
-- The model will locally export the graphs of each stock's datasets and the graphs of the respective price trend forecasts. ( _graphs will be located inside the `./images/data-preprocessing` and `./images/predictions` folders_ )
-- The model will locally save the ML models generated for each stock, so that they can be reloaded directly from the disk. ( _models will be located inside the `./models` folder_ )
+- The models will print out step-by-step notifications in the terminal from which they are launched.
+- The models will locally save the stocks data, in order to allow multiple models to be built from them. ( _data will be located inside the `./data` folder_ )
+- The models will locally save the deep learning models generated for each stock, so that they can be reloaded directly from the disk. ( _models will be located inside the `./models` folder_ )
+- The models will locally export the graphs of each stock's datasets and the graphs of the respective forecasts. ( _graphs will be located inside the `./images/data-preprocessing` and `./images/predictions` folders_ )
+- The models will export in a csv file the forecasted values and all the error metrics needed to use the predictions of the various models jointly.
 
-> NdR:
->
-> - Model code documentation will be enriched at a later date.
+> NdR: Models code documentation will be enriched at a later date.
