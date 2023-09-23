@@ -46,31 +46,31 @@ class DataManager:
         return self.__tickers
 
     @property
-    def ts_components(self) -> dict:
+    def tr_components(self) -> dict:
         return self.__test_runs_components
 
     @property
-    def ts_learning_params(self) -> dict:
+    def tr_learning_params(self) -> dict:
         return self.__test_runs_components_learning_params
 
     @property
-    def ts_scalers(self) -> dict:
+    def tr_scalers(self) -> dict:
         return self.__test_runs_components_scalers
 
     @property
-    def ts_datasets(self) -> dict:
+    def tr_datasets(self) -> dict:
         return self.__test_runs_datasets
 
     @property
-    def ts_bt_datasets(self) -> dict:
+    def tr_bt_datasets(self) -> dict:
         return self.__test_runs_backtracked_datasets
 
     @property
-    def ts_predictions(self) -> dict:
+    def tr_predictions(self) -> dict:
         return self.__test_runs_predictions
 
     @property
-    def ts_bt_predictions(self) -> dict:
+    def tr_bt_predictions(self) -> dict:
         return self.__test_runs_backtracked_predictions
 
     @staticmethod
@@ -184,7 +184,7 @@ class DataManager:
     def calculate_backtrack_aes(components_predictions) -> np.ndarray:
         metrics = np.zeros((components_predictions.get(list(components_predictions.keys())[0]).shape[0], 1),
                            dtype=float)
-        for index, metric in enumerate(metrics):
+        for index in enumerate(metrics):
             components_metrics = np.zeros((len(components_predictions.keys()),), dtype=float)
             for sub_index, component in enumerate(components_predictions.keys()):
                 components_metrics[sub_index] = np.abs(components_predictions.get(component)[index][1] -
@@ -259,12 +259,13 @@ class DataManager:
                         print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} ] Ticker {ticker} imported. '
                               f'{Style.RESET_ALL}')
                     else:
-                        print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] Ticker {ticker} not imported due to '
-                              f'missing data. {Style.RESET_ALL}')
+                        print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] '
+                              f'Ticker {ticker} not imported due to missing data. {Style.RESET_ALL}')
                 else:
                     print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] No local data found for ticker {ticker}. '
                           f'{Style.RESET_ALL}')
-            print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} ] {imported_tickers} out of '
+            print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} ] '
+                  f'{imported_tickers} out of '
                   f'{len(self.__tickers)} ticker(s) imported from local data. {Style.RESET_ALL}')
         else:
             print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] No local data found for the model. '

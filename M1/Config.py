@@ -9,7 +9,8 @@ class Config:
         self.__test_runs_step_size = params[4]
         self.__epochs = params[5]
         self.__batch_size = params[6]
-        self.__verbosity = params[7]
+        self.__window_size = params[7]
+        self.__verbosity = params[8]
 
     @property
     def uuid(self) -> str:
@@ -42,6 +43,10 @@ class Config:
     @property
     def batch_size(self) -> int:
         return self.__batch_size
+
+    @property
+    def window_size(self) -> int:
+        return self.__window_size
 
     @property
     def verbosity(self) -> int:

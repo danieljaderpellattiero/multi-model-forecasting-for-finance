@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="f0351019-eef3-47a2-ba25-b00a38b40a81" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/.idea/M1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/.idea/M1.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/Autoencoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/Autoencoder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/Config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/DataManager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/LSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/LSTM.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/M1.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/M1.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/Main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/model_configurations_misc.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/M2.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/M2.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/DataManager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/M2.py" beforeDir="false" afterPath="$PROJECT_DIR$/M2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../README.md" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2VoiHRFx5AsYkpUh4VFgd3xZ2uH" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "D:/multi-model-forecasting-for-finance/M1",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f0351019-eef3-47a2-ba25-b00a38b40a81" name="Changes" comment="" />
+      <created>1695508746553</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1695508746553</updated>
+    </task>
+    <servers />
+  </component>
+</project>

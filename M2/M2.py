@@ -31,52 +31,52 @@ class M2:
             for test_run in range(0, self.__config.tr_amt):
                 components_predictions = {}
                 components_backtracked_predictions = {}
-                for index, component in enumerate(self.__data_mgmt.ts_components.get(ticker).get(test_run).keys()):
+                for index, component in enumerate(self.__data_mgmt.tr_components.get(ticker).get(test_run).keys()):
                     lstm = LSTM(self.__config, ticker, test_run, component,
-                                self.__data_mgmt.ts_learning_params.get(ticker).get(test_run).get('epochs')[index])
+                                self.__data_mgmt.tr_learning_params.get(ticker).get(test_run).get('epochs')[index])
                     if not lstm.import_model():
-                        lstm.define_model(self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                        lstm.define_model(self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                           .get('training').get('inputs').shape)
                         lstm.compile_model()
-                        lstm.train_model(self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                        lstm.train_model(self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                          .get('training').get('inputs'),
-                                         self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                                         self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                          .get('training').get('targets'),
-                                         self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                                         self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                          .get('validation').get('inputs'),
-                                         self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                                         self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                          .get('validation').get('targets'))
-                        lstm.evaluate_model(self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                        lstm.evaluate_model(self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                             .get('test').get('inputs'),
-                                            self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                                            self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                             .get('test').get('targets'))
 
                     components_predictions.update({
-                        component: lstm.predict(self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                        component: lstm.predict(self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                                 .get('test').get('inputs'))
                     })
 
                     backtracked_predictions_tmp = self.__data_mgmt.init_backtrack_buffer(components_predictions
                                                                                          .get(component))
-                    for ref_index, ref in enumerate(self.__data_mgmt.ts_bt_datasets.get(ticker).get(test_run)
+                    for ref_index, ref in enumerate(self.__data_mgmt.tr_bt_datasets.get(ticker).get(test_run)
                                                     .get(component)):
                         backtracked_sequence_set = (
-                            'training' if ref <= (self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                            'training' if ref <= (self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                                   .get('training').get('inputs').shape[0] - 1) else 'validation')
                         actual_ref = (ref if backtracked_sequence_set == 'training'
-                                      else ref - self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                                      else ref - self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                       .get('training').get('inputs').shape[0])
-                        backtracked_sequence = (self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                        backtracked_sequence = (self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                                                             .get(backtracked_sequence_set)
                                                                             .get('inputs')[actual_ref])
                         backtracked_predictions_tmp[ref_index][0] = lstm.predict(backtracked_sequence
                                                                                  .reshape(1, self.__config.window_size))
                         backtracked_predictions_tmp[ref_index][1] = (
-                            self.__data_mgmt.ts_datasets.get(ticker).get(test_run).get(component)
+                            self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                                         .get(backtracked_sequence_set).get('targets')[actual_ref])
                     components_backtracked_predictions.update({component: backtracked_predictions_tmp})
                 predictions.update({test_run: components_predictions})
                 backtracked_predictions.update({test_run: components_backtracked_predictions})
-            self.__data_mgmt.ts_predictions.update({ticker: predictions})
-            self.__data_mgmt.ts_bt_predictions.update({ticker: backtracked_predictions})
+            self.__data_mgmt.tr_predictions.update({ticker: predictions})
+            self.__data_mgmt.tr_bt_predictions.update({ticker: backtracked_predictions})
             self.__data_mgmt.reconstruct_and_export_results(ticker)

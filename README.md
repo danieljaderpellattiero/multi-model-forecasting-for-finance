@@ -14,7 +14,7 @@ Finally, a software that can effectively and efficiently combine these algorithm
 
 ---
 
-## Machine Learning models
+## Deep Learning models
 
 ### WSAEs-LSTM ( model №1 )
 
