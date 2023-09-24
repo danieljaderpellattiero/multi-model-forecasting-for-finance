@@ -2,33 +2,36 @@ import os
 import numpy as np
 
 from tensorflow import keras
+from keras import Input, Model
 from colorama import Fore, Style
 from keras.optimizers import Adam
+from keras.losses import MeanAbsoluteError
+from keras.metrics import MeanAbsoluteError
+from keras.activations import tanh, sigmoid
+from keras.layers import LSTM, Reshape, Lambda
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
-class LSTM:
+class SAEsLSTM:
 
     def __init__(self, ticker, parent_model_config) -> None:
+        self.__model = None
         self.__ticker = ticker
         self.__config = parent_model_config
-        self.__model = None
-        self.__loss_function = 'mae'
-        self.__model_metrics = ['mae']
-        self.__activation_functions = ['tanh', 'sigmoid']
+        self.__loss_function = MeanAbsoluteError()
+        self.__model_metric = MeanAbsoluteError()
+        self.__activation_functions = [tanh, sigmoid]
         self.__dropout = 0.2
         self.__recurrent_dropout = 0.2
         self.__optimizers = [Adam(learning_rate=1e-3), Adam(learning_rate=1e-4)]
-        self.__early_stopper = EarlyStopping(monitor='mae', patience=50, mode='auto')
-        self.__model_checkpoints = ModelCheckpoint(f'./models/{self.__ticker}/SAEs-LSTM',
-                                                   monitor='val_loss', verbose=0,
-                                                   save_weights_only=False, save_best_only=True,
-                                                   mode='auto')
+        self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
+        self.__model_checkpoints = ModelCheckpoint(f'./models/{self.__ticker}/SAEs-LSTM', monitor='val_loss',
+                                                   verbose=0, save_weights_only=False, save_best_only=True, mode='auto')
 
     def import_model(self) -> bool:
-        local_lstm_path = f'./models/{self.__ticker}/SAEs-LSTM'
-        if os.path.exists(local_lstm_path):
-            self.__model = keras.models.load_model(local_lstm_path, compile=False, safe_mode=True)
+        lstm_path = f'./models/{self.__ticker}/SAEs-LSTM'
+        if os.path.exists(lstm_path):
+            self.__model = keras.models.load_model(lstm_path, compile=False, safe_mode=True)
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} ] Local SAEs-LSTM found. '
                   f'{Style.RESET_ALL}')
             return True
@@ -38,17 +41,14 @@ class LSTM:
             return False
 
     def define_model(self, encoder, decoder) -> None:
-        data_source = keras.Input(shape=(encoder.input.shape[1],), name='source')
+        data_source = Input(shape=(encoder.input.shape[1],), name='source')
         encoder = encoder(data_source)
-        lstm_source = keras.layers.Reshape(target_shape=(encoder.shape[1], 1),
-                                           input_shape=encoder.shape, name='lstm_input')(encoder)
-        lstm_l1 = keras.layers.LSTM(10, activation=self.__activation_functions[0], return_sequences=True,
-                                    name='lstm_1')(lstm_source)
-        lstm_l2 = keras.layers.LSTM(1, activation=self.__activation_functions[1], return_sequences=True,
-                                    name='lstm_2')(lstm_l1)
+        lstm_source = Reshape(target_shape=(encoder.shape[1], 1), input_shape=encoder.shape, name='lstm_input')(encoder)
+        lstm_l1 = LSTM(10, activation=self.__activation_functions[0], return_sequences=True, name='lstm_1')(lstm_source)
+        lstm_l2 = LSTM(1, activation=self.__activation_functions[1], return_sequences=True, name='lstm_2')(lstm_l1)
         decoder = decoder(lstm_l2)
-        lstm_lambda = keras.layers.Lambda(lambda tensor: tensor[:, -1], name='lstm_output')(decoder)
-        self.__model = keras.Model(data_source, lstm_lambda, name='SAEs-LSTM')
+        lstm_lambda = Lambda(lambda tensor: tensor[:, -1], name='lstm_output')(decoder)
+        self.__model = Model(data_source, lstm_lambda, name='SAEs-LSTM')
 
     def compile_model(self, fine_tuning=False) -> None:
         if self.__model is not None:
@@ -56,7 +56,7 @@ class LSTM:
                 self.__model.get_layer('Encoder').trainable = False
                 self.__model.get_layer('Decoder').trainable = False
             self.__model.compile(optimizer=self.__optimizers[0] if not fine_tuning else self.__optimizers[1],
-                                 loss=self.__loss_function, metrics=self.__model_metrics)
+                                 loss=self.__loss_function, metrics=self.__model_metric)
         else:
             print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} | {self.__ticker} ] Cannot compile an undefined model. '
                   f'{Style.BRIGHT}')
@@ -66,8 +66,8 @@ class LSTM:
         if self.__model is not None:
             self.__model.summary()
         else:
-            print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} | {self.__ticker} ] Cannot print summary of an undefined '
-                  f'model. {Style.BRIGHT}')
+            print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} | {self.__ticker} ] '
+                  f'Cannot print summary of an undefined model. {Style.BRIGHT}')
 
     def train_model(self, training_dataset, validation_dataset, test_run, shuffled=True) -> None:
         if self.__model is not None:

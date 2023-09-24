@@ -2,23 +2,28 @@ import os
 import numpy as np
 
 from tensorflow import keras
+from keras import Input, Model
+from keras.layers import Dense
 from colorama import Fore, Style
 from keras.regularizers import L2
+from keras.activations import elu
 from keras.optimizers import Adadelta
+from keras.losses import MeanAbsoluteError
+from keras.metrics import MeanAbsoluteError
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
-class Autoencoder:
+class StackedAutoEncoders:
 
     def __init__(self, ticker, parent_model_config) -> None:
-        self.__ticker = ticker
-        self.__config = parent_model_config
         self.__model = None
         self.__encoder = None
         self.__decoder = None
-        self.__loss_function = 'mae'
-        self.__model_metrics = ['mae']
-        self.__activation_function = 'elu'
+        self.__ticker = ticker
+        self.__config = parent_model_config
+        self.__activation_function = elu
+        self.__loss_function = MeanAbsoluteError()
+        self.__model_metric = MeanAbsoluteError()
         self.__layer_weight_regularizer = L2(0.01)
         self.__optimizer = Adadelta(learning_rate=1.0)
         self.__early_stopper = EarlyStopping(monitor=self.__loss_function, patience=50, mode='auto')
@@ -34,9 +39,9 @@ class Autoencoder:
         return self.__decoder
 
     def import_model(self) -> bool:
-        local_autoencoder_path = f'./models/{self.__ticker}/SAEs'
-        if os.path.exists(local_autoencoder_path):
-            self.__model = keras.models.load_model(local_autoencoder_path, compile=False, safe_mode=True)
+        autoencoder_path = f'./models/{self.__ticker}/SAEs'
+        if os.path.exists(autoencoder_path):
+            self.__model = keras.models.load_model(autoencoder_path, compile=False, safe_mode=True)
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} ] Local SAEs found. '
                   f'{Style.RESET_ALL}')
             self.detach_components()
@@ -47,30 +52,24 @@ class Autoencoder:
             return False
 
     def define_model(self, dataset_shape) -> None:
-        data_source = keras.Input(shape=(dataset_shape[1],), name='encoder_input')
-        dense_l1 = keras.layers.Dense(15, activation=self.__activation_function,
-                                      activity_regularizer=self.__layer_weight_regularizer,
-                                      name='encoder_l1')(data_source)
-        dense_l2 = keras.layers.Dense(12, activation=self.__activation_function,
-                                      activity_regularizer=self.__layer_weight_regularizer,
-                                      name='encoder_l2')(dense_l1)
-        dense_l3 = keras.layers.Dense(10, activation=self.__activation_function,
-                                      activity_regularizer=self.__layer_weight_regularizer,
-                                      name='encoder_output')(dense_l2)
-        dense_l4 = keras.layers.Dense(12, activation=self.__activation_function,
-                                      activity_regularizer=self.__layer_weight_regularizer,
-                                      name='decoder_input')(dense_l3)
-        dense_l5 = keras.layers.Dense(15, activation=self.__activation_function,
-                                      activity_regularizer=self.__layer_weight_regularizer,
-                                      name='decoder_l1')(dense_l4)
-        dense_l6 = keras.layers.Dense(dataset_shape[1], activation=self.__activation_function,
-                                      activity_regularizer=self.__layer_weight_regularizer,
-                                      name='decoder_output')(dense_l5)
-        self.__model = keras.Model(data_source, dense_l6, name='SAEs')
+        data_source = Input(shape=(dataset_shape[1],), name='encoder_input')
+        dense_l1 = Dense(15, activation=self.__activation_function,
+                         activity_regularizer=self.__layer_weight_regularizer, name='encoder_l1')(data_source)
+        dense_l2 = Dense(12, activation=self.__activation_function,
+                         activity_regularizer=self.__layer_weight_regularizer, name='encoder_l2')(dense_l1)
+        dense_l3 = Dense(10, activation=self.__activation_function,
+                         activity_regularizer=self.__layer_weight_regularizer, name='encoder_output')(dense_l2)
+        dense_l4 = Dense(12, activation=self.__activation_function,
+                         activity_regularizer=self.__layer_weight_regularizer, name='decoder_input')(dense_l3)
+        dense_l5 = Dense(15, activation=self.__activation_function,
+                         activity_regularizer=self.__layer_weight_regularizer, name='decoder_l1')(dense_l4)
+        dense_l6 = Dense(dataset_shape[1], activation=self.__activation_function,
+                         activity_regularizer=self.__layer_weight_regularizer, name='decoder_output')(dense_l5)
+        self.__model = Model(data_source, dense_l6, name='SAEs')
 
     def compile_model(self) -> None:
         if self.__model is not None:
-            self.__model.compile(optimizer=self.__optimizer, loss=self.__loss_function, metrics=self.__model_metrics)
+            self.__model.compile(optimizer=self.__optimizer, loss=self.__loss_function, metrics=self.__model_metric)
         else:
             print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} | {self.__ticker} | Test run 0 ] '
                   f'Cannot compile an undefined model. {Style.BRIGHT}')

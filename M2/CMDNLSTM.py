@@ -2,12 +2,17 @@ import os
 import numpy as np
 
 from tensorflow import keras
+from keras import Input, Model
 from colorama import Fore, Style
 from keras.optimizers import Adam
+from keras.layers import LSTM, Dense
+from keras.losses import MeanSquaredError
+from keras.metrics import MeanSquaredError
+from keras.activations import tanh, sigmoid
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 
-class LSTM:
+class CMDNLSTM:
 
     def __init__(self, parent_model_config, ticker, test_run, component, epochs) -> None:
         self.__model = None
@@ -16,22 +21,22 @@ class LSTM:
         self.__component = component
         self.__config = parent_model_config
         self.__epochs = epochs
-        self.__model_metric = 'mse'
-        self.__loss_function = 'mse'
-        self.__activation = 'tanh'
-        self.__recurrent_activation = 'sigmoid'
+        self.__model_metric = MeanSquaredError()
+        self.__loss_function = MeanSquaredError()
+        self.__activation = tanh
+        self.__recurrent_activation = sigmoid
         self.__dropout = 0.2
         self.__recurrent_dropout = 0.2
         self.__optimizer = Adam(learning_rate=1e-3)
-        self.__early_stopper = EarlyStopping(monitor='val_loss', patience=50, mode='auto')
+        self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
         self.__reduce = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, mode='auto')
-        self.__model_checkpoints = ModelCheckpoint(f'./models/{ticker}/test_run_{test_run}/CEEMDAN_LSTM_{component}',
+        self.__model_checkpoints = ModelCheckpoint(f'./models/{ticker}/test_run_{test_run}/LSTM_{component}',
                                                    monitor='val_loss', verbose=0, save_weights_only=False,
                                                    save_best_only=True,
                                                    mode='auto')
 
     def import_model(self) -> bool:
-        lstm_path = f'./models/{self.__ticker}/test_run_{self.__test_run}/CEEMDAN_LSTM_{self.__component}'
+        lstm_path = f'./models/{self.__ticker}/test_run_{self.__test_run}/LSTM_{self.__component}'
         if os.path.exists(lstm_path):
             self.__model = keras.models.load_model(lstm_path, compile=False)
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} | Test run {self.__test_run} ] '
@@ -43,18 +48,18 @@ class LSTM:
             return False
 
     def define_model(self, dataset_shape) -> None:
-        data_source = keras.Input(shape=(dataset_shape[1], 1), name='source')
-        lstm_l1 = keras.layers.LSTM(128, activation=self.__activation, return_sequences=True,
-                                    recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
-                                    recurrent_dropout=self.__recurrent_dropout, name='lstm_1')(data_source)
-        lstm_l2 = keras.layers.LSTM(64, activation=self.__activation, return_sequences=True,
-                                    recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
-                                    recurrent_dropout=self.__recurrent_dropout, name='lstm_2')(lstm_l1)
-        lstm_l3 = keras.layers.LSTM(32, activation=self.__activation, return_sequences=False,
-                                    recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
-                                    recurrent_dropout=self.__recurrent_dropout, name='lstm_3')(lstm_l2)
-        dense_l1 = keras.layers.Dense(1, activation=self.__activation, name='dense_1')(lstm_l3)
-        self.__model = keras.Model(data_source, dense_l1, name='CEEMDAN_LSTM')
+        data_source = Input(shape=(dataset_shape[1], 1), name='source')
+        lstm_l1 = LSTM(128, activation=self.__activation, return_sequences=True,
+                       recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
+                       recurrent_dropout=self.__recurrent_dropout, name='lstm_1')(data_source)
+        lstm_l2 = LSTM(64, activation=self.__activation, return_sequences=True,
+                       recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
+                       recurrent_dropout=self.__recurrent_dropout, name='lstm_2')(lstm_l1)
+        lstm_l3 = LSTM(32, activation=self.__activation, return_sequences=False,
+                       recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
+                       recurrent_dropout=self.__recurrent_dropout, name='lstm_3')(lstm_l2)
+        dense_l1 = Dense(1, activation=self.__activation, name='dense_1')(lstm_l3)
+        self.__model = Model(data_source, dense_l1, name='LSTM')
 
     def compile_model(self) -> None:
         if self.__model is not None:

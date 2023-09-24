@@ -76,14 +76,14 @@ class DataManager:
             return False
 
     @staticmethod
-    def plot_data(title, training, validation, test, path):
+    def plot_data(title, training, validation, test, path) -> None:
         plt.figure(figsize=(16, 9))
         plt.title(title)
         plt.plot(training, label='training_set')
         plt.plot(validation, label='validation_set')
         plt.plot(test, label='test_set')
         plt.grid(True)
-        plt.legend()
+        plt.legend(loc='best')
         plt.savefig(f'{path}')
         plt.close()
 
@@ -146,8 +146,8 @@ class DataManager:
                 ticker_path = f'{data_path}/{ticker}'
                 if os.path.exists(ticker_path):
                     is_missing_data = False
-                    dfs = {}
-                    processed_dfs = {}
+                    dataframes = {}
+                    processed_dataframes = {}
                     scalers = {}
                     for test_run in self.__test_runs_periods.keys():
                         if not is_missing_data:
@@ -160,8 +160,9 @@ class DataManager:
                             if (os.path.exists(test_run_path) and os.path.exists(dataframe_path) and
                                     os.path.exists(training_set_path) and os.path.exists(validation_set_path) and
                                     os.path.exists(test_set_path) and os.path.exists(scaler_path)):
-                                dfs.update({test_run: pd.read_csv(dataframe_path, index_col='Date', parse_dates=True)})
-                                processed_dfs.update({
+                                dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Date',
+                                                                         parse_dates=True)})
+                                processed_dataframes.update({
                                     test_run: {
                                         'training': pd.read_csv(training_set_path, index_col='Date', parse_dates=True),
                                         'validation': pd.read_csv(validation_set_path, index_col='Date',
@@ -173,9 +174,9 @@ class DataManager:
                             else:
                                 is_missing_data = True
                     if not is_missing_data:
-                        self.__test_runs_dataframes.update({ticker: dfs})
+                        self.__test_runs_dataframes.update({ticker: dataframes})
                         self.__test_runs_scalers.update({ticker: scalers})
-                        self.__test_runs_processed_dataframes.update({ticker: processed_dfs})
+                        self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
                         self.__cached_tickers.update({ticker: True})
                         imported_dataframes += 1
                         print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} ] Ticker {ticker} imported. '
@@ -186,15 +187,15 @@ class DataManager:
                 else:
                     print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] '
                           f'No local data found for ticker {ticker}. {Style.RESET_ALL}')
-            print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} ] '
-                  f'{imported_dataframes} out of '
-                  f'{len(self.__tickers)} ticker(s) imported from local data. {Style.RESET_ALL}')
+            print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} ] {imported_dataframes} out of {len(self.__tickers)} '
+                  f'ticker(s) imported from local data. {Style.RESET_ALL}')
         else:
             print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] No local data found for the model. '
                   f'{Style.RESET_ALL}')
 
     def check_local_data_availability(self) -> bool:
-        if len(self.__test_runs_processed_dataframes.keys()) == len(self.__tickers):
+        if (len(self.__test_runs_dataframes) == len(self.__tickers) and
+                len(self.__test_runs_processed_dataframes) == len(self.__tickers)):
             return True
         else:
             return False
@@ -213,17 +214,17 @@ class DataManager:
                     dataframe = dataframe[['Adj Close']]
                     dataframe = dataframe.rename(columns={'Adj Close': 'adj_close'}, inplace=False)
 
-                    dfs = {}
-                    processed_dfs = {}
+                    dataframes = {}
+                    processed_dataframes = {}
                     for test_run in self.__test_runs_periods.keys():
                         dataframe_tmp_1 = dataframe.copy(deep=True)
                         dataframe_tmp_2 = dataframe.copy(deep=True)
                         periods = self.__test_runs_periods.get(test_run)
-                        dfs.update({
+                        dataframes.update({
                             test_run: dataframe_tmp_1.loc[f'{periods[0].to_date_string()}':
                                                           f'{periods[3].to_date_string()}']
                         })
-                        processed_dfs.update({
+                        processed_dataframes.update({
                             test_run: {
                                 'training': dataframe_tmp_2.loc[f'{periods[0].to_date_string()}':
                                                                 f'{periods[1].to_date_string()}'],
@@ -234,15 +235,15 @@ class DataManager:
                             }
                         })
                         self.plot_data(f'{ticker} original data subset (test run {test_run})',
-                                       processed_dfs.get(test_run).get('training'),
-                                       processed_dfs.get(test_run).get('validation'),
-                                       processed_dfs.get(test_run).get('test'),
+                                       processed_dataframes.get(test_run).get('training'),
+                                       processed_dataframes.get(test_run).get('validation'),
+                                       processed_dataframes.get(test_run).get('test'),
                                        f'{png_path}/test_run_{test_run}_phase_1.png')
-                    self.__test_runs_dataframes.update({ticker: dfs})
-                    self.__test_runs_processed_dataframes.update({ticker: processed_dfs})
+                    self.__test_runs_dataframes.update({ticker: dataframes})
+                    self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
         else:
-            print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] Cannot download dataframes without internet '
-                  f'connection. {Style.RESET_ALL}')
+            print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
+                  f'Cannot download dataframes without internet connection. {Style.RESET_ALL}')
 
     def normalize_dataframes(self) -> None:
         for ticker in self.__tickers:
@@ -292,7 +293,7 @@ class DataManager:
                                    self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test'),
                                    f'{png_path}/test_run_{test_run}_phase_3.png')
 
-    def export_data(self) -> None:
+    def export_dataframes(self) -> None:
         for ticker in self.__tickers:
             if not self.__cached_tickers.get(ticker):
                 data_path = f'./data/{ticker}'
@@ -390,7 +391,7 @@ class DataManager:
                 dataset.update({test_run: closest_sequences_refs})
             self.__test_runs_backtracked_datasets.update({ticker: dataset})
 
-    def reconstruct_and_export_results(self, ticker):
+    def reconstruct_and_export_results(self, ticker) -> None:
         for test_run in self.__test_runs_periods.keys():
             scaler = self.__test_runs_scalers.get(ticker).get(test_run)
             png_path = f'./images/predictions/{ticker}'
@@ -428,7 +429,7 @@ class DataManager:
             predictions.flatten(),
             index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-len(predictions):]
         ), label='model_predictions')
-        plt.legend()
+        plt.legend(loc='best')
         plt.grid(True)
         plt.savefig(f'{path}/test_run_{test_run}.png')
         plt.close()

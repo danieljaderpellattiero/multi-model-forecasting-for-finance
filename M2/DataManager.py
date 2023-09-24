@@ -89,7 +89,7 @@ class DataManager:
         plt.figure(figsize=(16, 9))
         plt.title(title)
         plt.plot(time_series, label='adj_close')
-        plt.legend()
+        plt.legend(loc='best')
         plt.grid(True)
         plt.savefig(f'{path}')
         plt.close()
@@ -265,8 +265,8 @@ class DataManager:
                     print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] No local data found for ticker {ticker}. '
                           f'{Style.RESET_ALL}')
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} ] '
-                  f'{imported_tickers} out of '
-                  f'{len(self.__tickers)} ticker(s) imported from local data. {Style.RESET_ALL}')
+                  f'{imported_tickers} out of {len(self.__tickers)} ticker(s) imported from local data. '
+                  f'{Style.RESET_ALL}')
         else:
             print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] No local data found for the model. '
                   f'{Style.RESET_ALL}')
@@ -308,8 +308,8 @@ class DataManager:
                                               f'{png_path}/test_run_{test_run}.png')
                     self.__test_runs_dataframes.update({ticker: dataframes})
         else:
-            print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] Cannot download dataframes without internet '
-                  f'connection. {Style.RESET_ALL}')
+            print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
+                  f'Cannot download dataframes without internet connection. {Style.RESET_ALL}')
 
     def decompose_time_series(self) -> None:
         for ticker in self.__tickers:
@@ -462,7 +462,7 @@ class DataManager:
                 datasets.update({test_run: components_datasets})
             self.__test_runs_backtracked_datasets.update({ticker: datasets})
 
-    def reconstruct_and_export_results(self, ticker):
+    def reconstruct_and_export_results(self, ticker) -> None:
         for test_run in self.__test_runs_predictions.get(ticker).keys():
             png_path = f'./images/predictions/{ticker}'
             if not os.path.exists(png_path):
@@ -514,7 +514,7 @@ class DataManager:
         plt.plot(pd.Series(
             results.flatten(), index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-len(results):]),
             label='model_predictions')
-        plt.legend()
+        plt.legend(loc='best')
         plt.grid(True)
         plt.savefig(f'{path}/test_run_{test_run}.png')
         plt.close()
