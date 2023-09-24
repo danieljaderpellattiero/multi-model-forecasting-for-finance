@@ -59,7 +59,7 @@ class M2:
                     backtracked_predictions_tmp = self.__data_mgmt.init_backtrack_buffer(components_predictions
                                                                                          .get(component))
                     for ref_index, ref in enumerate(self.__data_mgmt.tr_bt_datasets.get(ticker).get(test_run)
-                                                                                   .get(component)):
+                                                    .get(component)):
                         backtracked_sequence_set = (
                             'training' if ref <= (self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                                   .get('training').get('inputs').shape[0] - 1) else 'validation')
@@ -67,11 +67,9 @@ class M2:
                                       else ref - self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                       .get('training').get('inputs').shape[0])
                         backtracked_sequence = (self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
-                                                                            .get(backtracked_sequence_set)
-                                                                            .get('inputs')[actual_ref])
-                        backtracked_predictions_tmp[ref_index][0] = model.predict(backtracked_sequence
-                                                                                  .reshape(1,
-                                                                                           self.__config.window_size))
+                                                .get(backtracked_sequence_set).get('inputs')[actual_ref])
+                        backtracked_predictions_tmp[ref_index][0] = model.predict(
+                            backtracked_sequence.reshape(1, self.__config.window_size))
                         backtracked_predictions_tmp[ref_index][1] = (
                             self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                             .get(backtracked_sequence_set).get('targets')[actual_ref])

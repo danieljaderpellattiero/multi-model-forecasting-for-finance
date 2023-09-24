@@ -6,9 +6,9 @@ from keras import Input, Model
 from colorama import Fore, Style
 from keras.optimizers import Adam
 from keras.layers import LSTM, Dense
-from keras.losses import MeanSquaredError
-from keras.metrics import MeanSquaredError
 from keras.activations import tanh, sigmoid
+from keras.losses import MeanAbsoluteError as LossMAE
+from keras.metrics import MeanAbsoluteError as MetricMAE
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 
@@ -21,8 +21,8 @@ class CMDNLSTM:
         self.__component = component
         self.__config = parent_model_config
         self.__epochs = epochs
-        self.__model_metric = MeanSquaredError()
-        self.__loss_function = MeanSquaredError()
+        self.__model_metric = MetricMAE()
+        self.__loss_function = LossMAE()
         self.__activation = tanh
         self.__recurrent_activation = sigmoid
         self.__dropout = 0.2
@@ -31,9 +31,8 @@ class CMDNLSTM:
         self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
         self.__reduce = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, mode='auto')
         self.__model_checkpoints = ModelCheckpoint(f'./models/{ticker}/test_run_{test_run}/LSTM_{component}',
-                                                   monitor='val_loss', verbose=0, save_weights_only=False,
-                                                   save_best_only=True,
-                                                   mode='auto')
+                                                   monitor='val_loss', verbose=self.__config.verbosity,
+                                                   save_weights_only=False, save_best_only=True, mode='auto')
 
     def import_model(self) -> bool:
         lstm_path = f'./models/{self.__ticker}/test_run_{self.__test_run}/LSTM_{self.__component}'

@@ -398,11 +398,11 @@ class DataManager:
             if not os.path.exists(png_path):
                 os.makedirs(png_path)
 
-            predictions = scaler.inverse_transform(
-                np.array(self.__test_runs_predictions.get(ticker).get(test_run)).reshape(-1, 1))
+            predictions = np.array(self.__test_runs_predictions.get(ticker).get(test_run)).reshape(-1, 1)
             predictions_mae = mean_absolute_error(
-                self.__test_runs_dataframes.get(ticker).get(test_run).to_numpy(copy=True)[-len(predictions):],
+                self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
                 predictions)
+            scaler.inverse_transform(predictions)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
             self.export_results(ticker, test_run, predictions, predictions_mae, backtracked_predictions_aes)
@@ -417,7 +417,8 @@ class DataManager:
             'forecasted_values': predictions.flatten(),
             'backtrack_absolute_errors': backtracked_aes.flatten(),
             'test_run_mae': predictions_mae
-        }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-len(predictions):])
+        }, index=self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test')
+                 .index[self.__config.window_size:])
         model_results.to_csv(f'{data_path}/test_run_{test_run}_results.csv', encoding='utf-8',
                              sep=';', decimal=',', index_label='Date')
 
@@ -427,7 +428,8 @@ class DataManager:
         plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run), label='adj_close')
         plt.plot(pd.Series(
             predictions.flatten(),
-            index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-len(predictions):]
+            index=self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test').index[
+                  self.__config.window_size:]
         ), label='model_predictions')
         plt.legend(loc='best')
         plt.grid(True)

@@ -8,8 +8,8 @@ from colorama import Fore, Style
 from keras.regularizers import L2
 from keras.activations import elu
 from keras.optimizers import Adadelta
-from keras.losses import MeanAbsoluteError
-from keras.metrics import MeanAbsoluteError
+from keras.losses import MeanAbsoluteError as LossMAE
+from keras.metrics import MeanAbsoluteError as MetricMAE
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
@@ -22,13 +22,14 @@ class StackedAutoEncoders:
         self.__ticker = ticker
         self.__config = parent_model_config
         self.__activation_function = elu
-        self.__loss_function = MeanAbsoluteError()
-        self.__model_metric = MeanAbsoluteError()
+        self.__loss_function = LossMAE()
+        self.__model_metric = MetricMAE()
         self.__layer_weight_regularizer = L2(0.01)
         self.__optimizer = Adadelta(learning_rate=1.0)
-        self.__early_stopper = EarlyStopping(monitor=self.__loss_function, patience=50, mode='auto')
+        self.__early_stopper = EarlyStopping(monitor='mean_absolute_error', min_delta=1e-4, patience=50, mode='auto')
         self.__model_checkpoints = ModelCheckpoint(f'./models/{self.__ticker}/SAEs', monitor='val_loss',
-                                                   verbose=0, save_weights_only=False, save_best_only=True, mode='auto')
+                                                   verbose=self.__config.verbosity, save_weights_only=False,
+                                                   save_best_only=True, mode='auto')
 
     @property
     def encoder(self) -> keras.Model:

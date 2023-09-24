@@ -5,10 +5,10 @@ from tensorflow import keras
 from keras import Input, Model
 from colorama import Fore, Style
 from keras.optimizers import Adam
-from keras.losses import MeanAbsoluteError
-from keras.metrics import MeanAbsoluteError
 from keras.activations import tanh, sigmoid
 from keras.layers import LSTM, Reshape, Lambda
+from keras.losses import MeanAbsoluteError as LossMAE
+from keras.metrics import MeanAbsoluteError as MetricMAE
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
@@ -18,15 +18,16 @@ class SAEsLSTM:
         self.__model = None
         self.__ticker = ticker
         self.__config = parent_model_config
-        self.__loss_function = MeanAbsoluteError()
-        self.__model_metric = MeanAbsoluteError()
+        self.__loss_function = LossMAE()
+        self.__model_metric = MetricMAE()
         self.__activation_functions = [tanh, sigmoid]
         self.__dropout = 0.2
         self.__recurrent_dropout = 0.2
         self.__optimizers = [Adam(learning_rate=1e-3), Adam(learning_rate=1e-4)]
         self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
         self.__model_checkpoints = ModelCheckpoint(f'./models/{self.__ticker}/SAEs-LSTM', monitor='val_loss',
-                                                   verbose=0, save_weights_only=False, save_best_only=True, mode='auto')
+                                                   verbose=self.__config.verbosity, save_weights_only=False,
+                                                   save_best_only=True, mode='auto')
 
     def import_model(self) -> bool:
         lstm_path = f'./models/{self.__ticker}/SAEs-LSTM'

@@ -184,7 +184,7 @@ class DataManager:
     def calculate_backtrack_aes(components_predictions) -> np.ndarray:
         metrics = np.zeros((components_predictions.get(list(components_predictions.keys())[0]).shape[0], 1),
                            dtype=float)
-        for index in enumerate(metrics):
+        for index in range(0, metrics.shape[0]):
             components_metrics = np.zeros((len(components_predictions.keys()),), dtype=float)
             for sub_index, component in enumerate(components_predictions.keys()):
                 components_metrics[sub_index] = np.abs(components_predictions.get(component)[index][1] -
@@ -252,8 +252,9 @@ class DataManager:
                         self.__test_runs_dataframes.update({ticker: dataframes})
                         self.__test_runs_components.update({ticker: time_series_components})
                         self.__test_runs_components_scalers.update({ticker: time_series_components_scalers})
-                        self.__test_runs_components_learning_params.update({ticker:
-                                                                            time_series_components_learning_params})
+                        self.__test_runs_components_learning_params.update({
+                            ticker: time_series_components_learning_params
+                        })
                         self.__cached_tickers.update({ticker: True})
                         imported_tickers += 1
                         print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} ] Ticker {ticker} imported. '
@@ -468,19 +469,22 @@ class DataManager:
             if not os.path.exists(png_path):
                 os.makedirs(png_path)
 
-            reconstructed_predictions = self.reconstruct_results(
+            reconstructed_predictions, reconstructed_predictions_mae = self.reconstruct_results(
                 ticker, test_run, self.__test_runs_predictions.get(ticker).get(test_run))
-            reconstructed_predictions_mae = mean_absolute_error(
-                self.__test_runs_dataframes.get(ticker).get(test_run).iloc[-len(reconstructed_predictions):],
-                reconstructed_predictions)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
-            self.export_results(ticker, test_run, reconstructed_predictions, reconstructed_predictions_mae,
-                                backtracked_predictions_aes)
+            self.export_results(ticker, test_run, reconstructed_predictions,
+                                reconstructed_predictions_mae, backtracked_predictions_aes)
             self.plot_results(ticker, test_run, reconstructed_predictions, png_path)
 
-    def reconstruct_results(self, ticker, test_run, components_predictions) -> np.ndarray:
+    def reconstruct_results(self, ticker, test_run, components_predictions) -> tuple:
         results = [0] * len(components_predictions.get('residue'))
+        predictions_mae = np.zeros((len(components_predictions.keys()), ), dtype=float)
+        for index, component in enumerate(components_predictions.keys()):
+            predictions_mae[index] = mean_absolute_error(
+                self.__test_runs_datasets.get(ticker).get(test_run).get(component).get('test').get('targets'),
+                components_predictions.get(component)
+            )
         for component in components_predictions.keys():
             component_scaler = self.__test_runs_components_scalers.get(ticker).get(test_run).get(component)
             component_scaler.inverse_transform(components_predictions.get(component))
@@ -492,7 +496,7 @@ class DataManager:
             for component in components_predictions.keys():
                 component_index = len(components_predictions.get(component)) - index - 1
                 results[results_index] += components_predictions.get(component)[component_index]
-        return np.array(results).reshape(-1, 1)
+        return np.array(results).reshape(-1, 1), np.mean(predictions_mae)
 
     def export_results(self, ticker, test_run, predictions, predictions_mae, backtrack_aes) -> None:
         data_path = f'./results/{ticker}'
@@ -503,17 +507,18 @@ class DataManager:
             'forecasted_values': predictions.flatten(),
             'backtrack_absolute_errors': backtrack_aes.flatten(),
             'test_run_mae': predictions_mae
-        }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-len(predictions):])
+        }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:])
         model_results.to_csv(f'{data_path}/test_run_{test_run}_results.csv', encoding='utf-8',
                              sep=';', decimal=',', index_label='Date')
 
-    def plot_results(self, ticker, test_run, results, path) -> None:
+    def plot_results(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
         plt.title(f'{ticker} forecasting results (test run {test_run})')
         plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run), label='adj_close')
         plt.plot(pd.Series(
-            results.flatten(), index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-len(results):]),
-            label='model_predictions')
+            predictions.flatten(), index=self.__test_runs_dataframes.get(ticker).get(test_run).index[
+                                         -predictions.shape[0]:]
+        ), label='model_predictions')
         plt.legend(loc='best')
         plt.grid(True)
         plt.savefig(f'{path}/test_run_{test_run}.png')
