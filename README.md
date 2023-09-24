@@ -30,6 +30,12 @@ Finally, a software that can effectively and efficiently combine these algorithm
 
 - [Carbon price forecasting based on CEEMDAN and LSTM](https://www.sciencedirect.com/science/article/abs/pii/S0306261922000782?via=ihub)
 
+### CNN-LSTM ( model №3 )
+
+#### Paper
+
+- [A CNN–LSTM model for gold price time-series forecasting](https://link.springer.com/article/10.1007/s00521-020-04867-x)
+
 ### How to use them
 
 1. Open the project folder using a Python IDE. ( _preferably [PyCharm](https://www.jetbrains.com/pycharm/)_ )
