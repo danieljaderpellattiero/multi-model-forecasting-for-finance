@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 from colorama import Fore, Style
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
 
 
 class DataManager:
@@ -215,6 +215,7 @@ class DataManager:
                                                  self.__test_runs_periods.get(self.__config.tr_amt - 1)[3].add(days=1),
                                                  progress=False)
                     dataframe = dataframe[['Adj Close']]
+                    dataframe = dataframe.dropna(subset=['Adj Close'], inplace=False)
                     dataframe = dataframe.rename(columns={'Adj Close': 'adj_close'}, inplace=False)
 
                     dataframes = {}
@@ -376,24 +377,36 @@ class DataManager:
             predictions_mae = mean_absolute_error(
                 self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
                 predictions)
+            predictions_mape = mean_absolute_percentage_error(
+                self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
+                predictions)
+            predictions_mse = mean_squared_error(
+                self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
+                predictions)
+            predictions_rmse = np.sqrt(predictions_mse)
             predictions = np.exp(predictions)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
-            self.export_results(ticker, test_run, predictions, predictions_mae, backtracked_predictions_aes)
+            self.export_results(ticker, test_run, predictions, predictions_mae, predictions_mape,
+                                predictions_mse, predictions_rmse, backtracked_predictions_aes)
             self.plot_results(ticker, test_run, predictions, png_path)
 
-    def export_results(self, ticker, test_run, predictions, predictions_mae, backtracked_aes) -> None:
+    def export_results(self, ticker, test_run, predictions, predictions_mae, predictions_mape, predictions_mse,
+                       predictions_rmse, backtracked_aes) -> None:
         data_path = f'./results/{ticker}'
         if not os.path.exists(data_path):
             os.makedirs(data_path)
 
         model_results = pd.DataFrame({
             'forecasted_values': predictions.flatten(),
-            'backtrack_absolute_errors': backtracked_aes.flatten(),
-            'test_run_mae': predictions_mae
+            'backtrack_aes': backtracked_aes.flatten(),
+            'test_run_mae': predictions_mae,
+            'test_run_mape': predictions_mape,
+            'test_run_mse': predictions_mse,
+            'test_run_rmse': predictions_rmse
         }, index=self.__test_runs_dataframes.get(ticker).get(test_run).get('test').index[self.__config.window_size:])
         model_results.to_csv(f'{data_path}/test_run_{test_run}_results.csv', encoding='utf-8',
-                             sep=';', decimal=',', index_label='Date')
+                             sep=',', decimal='.', index_label='Date')
 
     def plot_results(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))

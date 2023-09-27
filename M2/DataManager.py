@@ -13,7 +13,7 @@ from joblib import dump, load
 from colorama import Fore, Style
 from TSDecomposer import TSDecomposer
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
 
 
 class DataManager:
@@ -123,7 +123,7 @@ class DataManager:
         if target_epochs < 2:
             return None
         epochs: list[int] = [-1] * target_epochs
-        delta = 10
+        delta = 5
         values_lower_limits = [250, 200]
         values_upper_limits = [300, 290]
         variable_delta = np.random.randint((values_lower_limits[0] - values_lower_limits[1]) // delta + 1) * delta
@@ -294,6 +294,7 @@ class DataManager:
                                                  self.__test_runs_periods.get(self.__config.tr_amt - 1)[3].add(days=1),
                                                  progress=False)
                     dataframe = dataframe[['Adj Close']]
+                    dataframe = dataframe.dropna(subset=['Adj Close'], inplace=False)
                     dataframe = dataframe.rename(columns={'Adj Close': 'adj_close'}, inplace=False)
 
                     dataframes = {}
@@ -469,22 +470,18 @@ class DataManager:
             if not os.path.exists(png_path):
                 os.makedirs(png_path)
 
-            reconstructed_predictions, reconstructed_predictions_mae = self.reconstruct_results(
-                ticker, test_run, self.__test_runs_predictions.get(ticker).get(test_run))
+            predictions_metrics = self.calculate_metrics(ticker, test_run, self.__test_runs_predictions.get(ticker)
+                                                         .get(test_run))
+            reconstructed_predictions = self.reconstruct_results(ticker, test_run,
+                                                                 self.__test_runs_predictions.get(ticker).get(test_run))
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
-            self.export_results(ticker, test_run, reconstructed_predictions,
-                                reconstructed_predictions_mae, backtracked_predictions_aes)
+            self.export_results(ticker, test_run, reconstructed_predictions, predictions_metrics,
+                                backtracked_predictions_aes)
             self.plot_results(ticker, test_run, reconstructed_predictions, png_path)
 
-    def reconstruct_results(self, ticker, test_run, components_predictions) -> tuple:
+    def reconstruct_results(self, ticker, test_run, components_predictions) -> np.ndarray:
         results = [0] * len(components_predictions.get('residue'))
-        predictions_mae = np.zeros((len(components_predictions.keys()), ), dtype=float)
-        for index, component in enumerate(components_predictions.keys()):
-            predictions_mae[index] = mean_absolute_error(
-                self.__test_runs_datasets.get(ticker).get(test_run).get(component).get('test').get('targets'),
-                components_predictions.get(component)
-            )
         for component in components_predictions.keys():
             component_scaler = self.__test_runs_components_scalers.get(ticker).get(test_run).get(component)
             component_scaler.inverse_transform(components_predictions.get(component))
@@ -496,20 +493,38 @@ class DataManager:
             for component in components_predictions.keys():
                 component_index = len(components_predictions.get(component)) - index - 1
                 results[results_index] += components_predictions.get(component)[component_index]
-        return np.array(results).reshape(-1, 1), np.mean(predictions_mae)
+        return np.array(results).reshape(-1, 1)
 
-    def export_results(self, ticker, test_run, predictions, predictions_mae, backtrack_aes) -> None:
+    def calculate_metrics(self, ticker, test_run, components_predictions) -> dict:
+        metrics = {}
+        for metric in [mean_absolute_error, mean_absolute_percentage_error, mean_squared_error]:
+            partial_metrics = np.zeros((len(components_predictions.keys()),), dtype=float)
+            for index, component in enumerate(components_predictions.keys()):
+                partial_metrics[index] = metric(
+                    self.__test_runs_datasets.get(ticker).get(test_run).get(component).get('test').get('targets'),
+                    components_predictions.get(component)
+                )
+            if metric == mean_absolute_percentage_error:
+                partial_metrics = np.delete(partial_metrics, partial_metrics.shape[0] - 1)
+            metrics.update({metric.__name__: np.mean(partial_metrics)})
+        metrics.update({'root_mean_squared_error': np.sqrt(metrics.get('mean_squared_error'))})
+        return metrics
+
+    def export_results(self, ticker, test_run, predictions, predictions_metrics, backtrack_aes) -> None:
         data_path = f'./results/{ticker}'
         if not os.path.exists(data_path):
             os.makedirs(data_path)
 
         model_results = pd.DataFrame({
             'forecasted_values': predictions.flatten(),
-            'backtrack_absolute_errors': backtrack_aes.flatten(),
-            'test_run_mae': predictions_mae
+            'backtrack_aes': backtrack_aes.flatten(),
+            'test_run_mae': predictions_metrics.get('mean_absolute_error'),
+            'test_run_mape': predictions_metrics.get('mean_absolute_percentage_error'),
+            'test_run_mse': predictions_metrics.get('mean_squared_error'),
+            'test_run_rmse': predictions_metrics.get('root_mean_squared_error')
         }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:])
         model_results.to_csv(f'{data_path}/test_run_{test_run}_results.csv', encoding='utf-8',
-                             sep=';', decimal=',', index_label='Date')
+                             sep=',', decimal='.', index_label='Date')
 
     def plot_results(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))

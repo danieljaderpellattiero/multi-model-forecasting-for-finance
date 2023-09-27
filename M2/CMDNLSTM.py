@@ -7,8 +7,8 @@ from colorama import Fore, Style
 from keras.optimizers import Adam
 from keras.layers import LSTM, Dense
 from keras.activations import tanh, sigmoid
-from keras.losses import MeanAbsoluteError as LossMAE
-from keras.metrics import MeanAbsoluteError as MetricMAE
+from keras.losses import MeanSquaredError as LossMSE
+from keras.metrics import MeanSquaredError as MetricMSE
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 
 
@@ -21,8 +21,8 @@ class CMDNLSTM:
         self.__component = component
         self.__config = parent_model_config
         self.__epochs = epochs
-        self.__model_metric = MetricMAE()
-        self.__loss_function = LossMAE()
+        self.__model_metric = MetricMSE()
+        self.__loss_function = LossMSE()
         self.__activation = tanh
         self.__recurrent_activation = sigmoid
         self.__dropout = 0.2

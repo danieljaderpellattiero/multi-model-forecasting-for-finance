@@ -6,7 +6,7 @@ from keras import Input, Model
 from colorama import Fore, Style
 from keras.optimizers import Adam
 from keras.activations import relu, tanh
-from keras.losses import MeanAbsoluteError as LossMAE
+from keras.losses import MeanSquaredError as LossMSE
 from keras.metrics import MeanAbsoluteError as MetricMAE
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.layers import Conv1D, MaxPooling1D, LSTM, Dense
@@ -18,7 +18,7 @@ class CNNLSTM:
         self.__model = None
         self.__ticker = ticker
         self.__config = parent_model_config
-        self.__loss_function = LossMAE()
+        self.__loss_function = LossMSE()
         self.__activation_functions = [relu, tanh]
         self.__model_metric = MetricMAE()
         self.__optimizer = Adam(learning_rate=1e-3)
