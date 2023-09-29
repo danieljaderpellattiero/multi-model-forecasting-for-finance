@@ -15,12 +15,12 @@ class M1:
     def run(self) -> None:
         self.__data_mgmt.init_periods()
         self.__data_mgmt.import_local_data()
-        if not self.__data_mgmt.check_local_data_availability():
+        if not self.__data_mgmt.is_local_data_available():
             self.__data_mgmt.download_dataframes()
             self.__data_mgmt.normalize_dataframes()
             self.__data_mgmt.denoise_dataframes()
             self.__data_mgmt.export_dataframes()
-            if not self.__data_mgmt.check_local_data_availability():
+            if not self.__data_mgmt.is_local_data_available():
                 exit(1)
         self.__data_mgmt.init_datasets()
         self.__data_mgmt.init_batches()

@@ -5,26 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f0351019-eef3-47a2-ba25-b00a38b40a81" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../M1/.idea/M1.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/.idea/M1.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M1/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../M1/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M1/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M1/Recurrent_Neural_Networks_for_Financial_Time-Series_modelling.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/Recurrent_Neural_Networks_for_Financial_Time-Series_modelling.pdf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M1/M1.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/M1.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMDNLSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/CMDNLSTM.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Financial_time_series_forecasting_model_based_on_CEEMDAN_and_LSTM.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/Financial_time_series_forecasting_model_based_on_CEEMDAN_and_LSTM.pdf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/.idea/M3.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/A_CNN-LSTM_model_for_gold_price_time-series_forecasting.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/CNNLSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/CNNLSTM.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/M2.py" beforeDir="false" afterPath="$PROJECT_DIR$/M2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TSDecomposer.py" beforeDir="false" afterPath="$PROJECT_DIR$/TSDecomposer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../M3/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/Main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../M3/M3.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/M3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

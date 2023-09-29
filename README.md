@@ -49,6 +49,6 @@ Finally, a software that can effectively and efficiently combine these algorithm
 - The models will locally save the stocks data, in order to allow multiple models to be built from them. ( _data will be located inside the `./data` folder_ )
 - The models will locally save the deep learning models generated for each stock, so that they can be reloaded directly from the disk. ( _models will be located inside the `./models` folder_ )
 - The models will locally export the graphs of each stock's datasets and the graphs of the respective forecasts. ( _graphs will be located inside the `./images/data-preprocessing` and `./images/predictions` folders_ )
-- The models will export in a csv file the forecasted values and all the error metrics needed to use the predictions of the various models jointly.
+- The models will export in a csv file the forecasted values and all the error metrics needed to use the predictions of the various models jointly. ( _csv files will be located inside the `./predictions` folder_ )
 
 > NdR: Models code documentation will be enriched at a later date.

@@ -1,4 +1,5 @@
 import os
+import matplotlib
 import numpy as np
 import pandas as pd
 import pendulum as time
@@ -11,6 +12,8 @@ import tensorflow as tf
 from tensorflow import keras
 from colorama import Fore, Style
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
+
+matplotlib.use('Agg')
 
 
 class DataManager:
@@ -102,15 +105,15 @@ class DataManager:
     def search_closest_sequence(target_sequence, training_set_sequences, validation_set_sequences) -> np.ndarray:
         best_match = None
         best_match_distance = None
-        for index, sequence in enumerate(training_set_sequences):
+        for sequence_index, sequence in enumerate(training_set_sequences):
             distance = np.linalg.norm(sequence - target_sequence)
             if best_match is None or distance < best_match_distance:
-                best_match = index
+                best_match = sequence_index
                 best_match_distance = distance
-        for index, sequence in enumerate(validation_set_sequences):
+        for sequence_index, sequence in enumerate(validation_set_sequences):
             distance = np.linalg.norm(sequence - target_sequence)
             if best_match is None or distance < best_match_distance:
-                best_match = training_set_sequences.shape[0] + index
+                best_match = training_set_sequences.shape[0] + sequence_index
                 best_match_distance = distance
         return best_match
 
@@ -196,7 +199,7 @@ class DataManager:
             print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] No local data found for the model. '
                   f'{Style.RESET_ALL}')
 
-    def check_local_data_availability(self) -> bool:
+    def is_local_data_available(self) -> bool:
         if (len(self.__test_runs_dataframes) == len(self.__tickers) and
                 len(self.__test_runs_processed_dataframes) == len(self.__tickers)):
             return True
@@ -361,9 +364,9 @@ class DataManager:
                 test_sequences = (self.__test_runs_datasets.get(ticker).get(test_run)
                                   .get('test').get('inputs'))
                 closest_sequences_refs = np.zeros((test_sequences.shape[0], 1), dtype=int)
-                for index, sequence in enumerate(test_sequences):
-                    closest_sequences_refs[index] = self.search_closest_sequence(sequence, training_sequences,
-                                                                                 validation_sequences)
+                for sequence_index, sequence in enumerate(test_sequences):
+                    closest_sequences_refs[sequence_index] = self.search_closest_sequence(sequence, training_sequences,
+                                                                                          validation_sequences)
                 dataset.update({test_run: closest_sequences_refs})
             self.__test_runs_backtracked_datasets.update({ticker: dataset})
 
@@ -393,19 +396,19 @@ class DataManager:
 
     def export_results(self, ticker, test_run, predictions, predictions_mae, predictions_mape, predictions_mse,
                        predictions_rmse, backtracked_aes) -> None:
-        data_path = f'./results/{ticker}'
+        data_path = f'./predictions/{ticker}'
         if not os.path.exists(data_path):
             os.makedirs(data_path)
 
         model_results = pd.DataFrame({
             'forecasted_values': predictions.flatten(),
-            'backtrack_aes': backtracked_aes.flatten(),
-            'test_run_mae': predictions_mae,
-            'test_run_mape': predictions_mape,
-            'test_run_mse': predictions_mse,
-            'test_run_rmse': predictions_rmse
+            'backtracked_values_aes': backtracked_aes.flatten(),
+            'mae': predictions_mae,
+            'mape': predictions_mape,
+            'mse': predictions_mse,
+            'rmse': predictions_rmse
         }, index=self.__test_runs_dataframes.get(ticker).get(test_run).get('test').index[self.__config.window_size:])
-        model_results.to_csv(f'{data_path}/test_run_{test_run}_results.csv', encoding='utf-8',
+        model_results.to_csv(f'{data_path}/test_run_{test_run}.csv', encoding='utf-8',
                              sep=',', decimal='.', index_label='Date')
 
     def plot_results(self, ticker, test_run, predictions, path) -> None:

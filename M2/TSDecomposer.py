@@ -1,7 +1,10 @@
 import os
+import matplotlib
 import matplotlib.pyplot as plt
 
 from PyEMD import CEEMDAN
+
+matplotlib.use('Agg')
 
 
 class TSDecomposer:
@@ -19,10 +22,10 @@ class TSDecomposer:
 
         figure, axis = plt.subplots(len(imfs) + 1, 1, sharex='all', figsize=(16, 9))
         figure.suptitle(f'CEEMDAN {mode} decomposition of {ticker} (test run {test_run})')
-        for index, imf in enumerate(imfs):
-            axis[index].plot(time_axis, imf, 'g', label=f'imf_{index}')
-            axis[index].legend(loc='best')
-            axis[index].grid(True)
+        for imf_index, imf in enumerate(imfs):
+            axis[imf_index].plot(time_axis, imf, 'g', label=f'imf_{imf_index}')
+            axis[imf_index].legend(loc='best')
+            axis[imf_index].grid(True)
         axis[len(imfs)].plot(time_axis, residue, 'b', label='residue')
         axis[len(imfs)].x_label = 'Time [days]'
         axis[len(imfs)].legend(loc='best')
