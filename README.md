@@ -49,13 +49,13 @@ Finally, a software that can effectively and efficiently combine these algorithm
 - The models will locally export the graphs of each stocks datasets and the graphs of the respective forecasts. ( _graphs will be located inside the `./M{model_number}/images/data-preprocessing` and `./M{model_number}/images/predictions` folders_ )
 - The models will export in a csv file the forecasted values and all the error metrics needed to use the predictions of the various models jointly. ( _csv files will be located inside the `./M{model_number}/predictions` folder_ )
 
-> NdR: models code documentation will be enriched at a later date.
+> NdR: Models code documentation will be enriched at a later date.
 
 ## The Multi-model
 
 ### How to use it
 
-> Assumption: suppose we ran the models for 1 test run on the MSFT ticker.
+> Assumption: Suppose we ran the models for 1 test run on the MSFT ticker.
 
 1. Create inside `./MultiModel/data` a folder named `MSFT`.
 2. Place inside the aforementioned folder the stock data. ( _data can be taken from `./M3/data/MSFT/test_run_0/[training|validation|test].csv`\, taking care to add the "test\_run\_0\_" prefix to each csv file name_ )
@@ -71,7 +71,7 @@ Finally, a software that can effectively and efficiently combine these algorithm
 This component has been developed to produce the deep learning models datasets from data provided by the Market Analysis team of the Italian Stock Exchange.  
 The original data received and the predictions derived on it are subject to a non-disclosure agreement, therefore will not be uploaded into the repository.
 
-### The datasets
+### The data
 
 The Market Analysis team provided Limit Order Book (intra-day) data from 1st September 2022 to 24th March 2023, at millisecond intervals, for the following basket of financial instruments:
 
@@ -85,3 +85,28 @@ The Market Analysis team provided Limit Order Book (intra-day) data from 1st Sep
 8. **Azimut** - IT0003261697
 9. **Moncler** - IT0004965148
 10. **Poste Italiane** - IT0003796171
+
+### The datasets
+
+For each financial instrument an amount of "test runs", equals to the number of trading days within the aforementioned interval, is generated. ( _1 trading day equals to 1 test run_ )  
+Because of the data amount and granularity three equal shifts are extracted from the single trading day, according to the subsequent schema:
+
+- **1<sup>st</sup> shift:** trading data included between **09:00 - 12:00**.
+- **2<sup>nd</sup> shift:** trading data included between **12:00 - 15:00**.
+- **3<sup>rd</sup> shift:** trading data included between **15:00 - 18:00**.
+
+> NdR: It is worth noticing that negotiations on the Euronext Milan market take place with the following schedules:
+> 
+> - Opening auctions<sup>[1]</sup> : 08:00 - 09:00 ( 09:00:00 - 09:00:59 )
+> - Continuous negotiation : 09:00 - 17:30
+> - Closing auctions<sup>[2]</sup> : 17:30 - 17:35 ( 17:35:00 - 17:35:59 )
+> - Trading at the closing auction price<sup>[3]</sup> : 17:35 ( 17:35:00 - 17:35:59 ) - 17:42
+>
+> > [1-2] _Pre-auction, validation, opening and conclusion of contracts._  
+> > [3] _Proposal entry phase, negotiation phase._
+
+In order to train the deep-learning models each shift is further split into three datasets, according to the following proportions:
+
+- **Training set: 80%** of the shift data.
+- **Validation set: 15%** of the shift data.
+- **Test set: 5%** of the shift data.
