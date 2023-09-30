@@ -14,11 +14,11 @@ class M3:
     def run(self) -> None:
         self.__data_mgmt.init_periods()
         self.__data_mgmt.import_local_data()
-        if not self.__data_mgmt.is_local_data_available():
+        if not self.__data_mgmt.check_data_availability():
             self.__data_mgmt.download_dataframes()
             self.__data_mgmt.homogenize_dataframes()
             self.__data_mgmt.export_dataframes()
-            if not self.__data_mgmt.is_local_data_available():
+            if not self.__data_mgmt.check_data_availability():
                 exit(1)
         self.__data_mgmt.init_datasets()
         self.__data_mgmt.init_batches()

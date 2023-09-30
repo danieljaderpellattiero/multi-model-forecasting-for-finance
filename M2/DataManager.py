@@ -20,6 +20,8 @@ matplotlib.use('Agg')
 
 
 class DataManager:
+    data_plot_colors = ['royalblue', 'goldenrod', 'coral']
+    model_predictions_plot_color = 'orchid'
 
     def __init__(self, model_config, tickers) -> None:
         self.__tickers = tickers
@@ -87,14 +89,27 @@ class DataManager:
         except urllib3.exceptions.MaxRetryError:
             return False
 
-    @staticmethod
-    def plot_time_series(title, time_series, path) -> None:
+    def plot_time_series(self, title, time_series, path) -> None:
         plt.figure(figsize=(16, 9))
         plt.title(title)
-        plt.plot(time_series, label='adj_close')
+        plt.plot(time_series, label='adj_close', color=self.data_plot_colors[0])
         plt.legend(loc='best')
         plt.grid(True)
         plt.savefig(f'{path}')
+        plt.close()
+
+    def plot_results(self, ticker, test_run, predictions, path) -> None:
+        plt.figure(figsize=(16, 9))
+        plt.title(f'{ticker} forecasting results (test run {test_run})')
+        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run), label='adj_close',
+                 color=self.data_plot_colors[0])
+        plt.plot(pd.Series(
+            predictions.flatten(), index=self.__test_runs_dataframes.get(ticker).get(test_run).index[
+                                         -predictions.shape[0]:]
+        ), label='model_predictions', color=self.model_predictions_plot_color)
+        plt.legend(loc='best')
+        plt.grid(True)
+        plt.savefig(f'{path}/test_run_{test_run}.png')
         plt.close()
 
     # Utility method.
@@ -275,7 +290,7 @@ class DataManager:
             print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] No local data found for the model. '
                   f'{Style.RESET_ALL}')
 
-    def is_local_data_available(self) -> bool:
+    def check_data_availability(self) -> bool:
         if (len(self.__test_runs_dataframes.keys()) == len(self.__tickers) and
                 len(self.__test_runs_components.keys()) == len(self.__tickers) and
                 len(self.__test_runs_components_scalers.keys()) == len(self.__tickers) and
@@ -288,9 +303,9 @@ class DataManager:
         if self.check_internet_connection():
             for ticker in self.__tickers:
                 if not self.__cached_tickers.get(ticker):
-                    png_path = f'./images/data-preprocessing/{ticker}'
-                    if not os.path.exists(png_path):
-                        os.makedirs(png_path)
+                    images_path = f'./images/data-preprocessing/{ticker}'
+                    if not os.path.exists(images_path):
+                        os.makedirs(images_path)
 
                     dataframe = finance.download(ticker,
                                                  self.__test_runs_periods.get(0)[0],
@@ -310,7 +325,7 @@ class DataManager:
                         })
                         self.plot_time_series(f'{ticker} original data subset (test run {test_run})',
                                               dataframes.get(test_run),
-                                              f'{png_path}/test_run_{test_run}.png')
+                                              f'{images_path}/test_run_{test_run}.png')
                     self.__test_runs_dataframes.update({ticker: dataframes})
         else:
             print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
@@ -332,9 +347,9 @@ class DataManager:
     def normalize_time_series_components(self) -> None:
         for ticker in self.__tickers:
             if not self.__cached_tickers.get(ticker):
-                png_path = f'./images/data-preprocessing/{ticker}'
-                if not os.path.exists(png_path):
-                    os.makedirs(png_path)
+                images_path = f'./images/data-preprocessing/{ticker}'
+                if not os.path.exists(images_path):
+                    os.makedirs(images_path)
 
                 time_series_scalers = {}
                 for test_run in self.__test_runs_periods.keys():
@@ -474,9 +489,9 @@ class DataManager:
 
     def reconstruct_and_export_results(self, ticker) -> None:
         for test_run in self.__test_runs_predictions.get(ticker).keys():
-            png_path = f'./images/predictions/{ticker}'
-            if not os.path.exists(png_path):
-                os.makedirs(png_path)
+            images_path = f'./images/predictions/{ticker}'
+            if not os.path.exists(images_path):
+                os.makedirs(images_path)
 
             predictions_metrics = self.calculate_metrics(ticker, test_run, self.__test_runs_predictions.get(ticker)
                                                          .get(test_run))
@@ -486,7 +501,7 @@ class DataManager:
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
             self.export_results(ticker, test_run, reconstructed_predictions, predictions_metrics,
                                 backtracked_predictions_aes)
-            self.plot_results(ticker, test_run, reconstructed_predictions, png_path)
+            self.plot_results(ticker, test_run, reconstructed_predictions, images_path)
 
     def reconstruct_results(self, ticker, test_run, components_predictions) -> np.ndarray:
         results = [0] * len(components_predictions.get('residue'))
@@ -533,16 +548,3 @@ class DataManager:
         }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:])
         model_results.to_csv(f'{data_path}/test_run_{test_run}.csv', encoding='utf-8',
                              sep=',', decimal='.', index_label='Date')
-
-    def plot_results(self, ticker, test_run, predictions, path) -> None:
-        plt.figure(figsize=(16, 9))
-        plt.title(f'{ticker} forecasting results (test run {test_run})')
-        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run), label='adj_close')
-        plt.plot(pd.Series(
-            predictions.flatten(), index=self.__test_runs_dataframes.get(ticker).get(test_run).index[
-                                         -predictions.shape[0]:]
-        ), label='model_predictions')
-        plt.legend(loc='best')
-        plt.grid(True)
-        plt.savefig(f'{path}/test_run_{test_run}.png')
-        plt.close()

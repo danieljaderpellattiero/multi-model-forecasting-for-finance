@@ -17,6 +17,8 @@ matplotlib.use('Agg')
 
 
 class DataManager:
+    data_plot_colors = ['royalblue', 'goldenrod', 'coral']
+    model_predictions_plot_color = 'orchid'
 
     def __init__(self, model_config, tickers) -> None:
         self.__tickers = tickers
@@ -75,16 +77,32 @@ class DataManager:
         except urllib3.exceptions.MaxRetryError:
             return False
 
-    @staticmethod
-    def plot_data(title, training, validation, test, path) -> None:
+    def plot_datasets(self, title, training_data, validation_data, test_data, path) -> None:
         plt.figure(figsize=(16, 9))
         plt.title(title)
-        plt.plot(training, label='training_set')
-        plt.plot(validation, label='validation_set')
-        plt.plot(test, label='test_set')
+        plt.plot(training_data, label='training_set', color=self.data_plot_colors[0])
+        plt.plot(validation_data, label='validation_set', color=self.data_plot_colors[1])
+        plt.plot(test_data, label='test_set', color=self.data_plot_colors[2])
         plt.grid(True)
         plt.legend(loc='best')
         plt.savefig(f'{path}')
+        plt.close()
+
+    def plot_results(self, ticker, test_run, predictions, path) -> None:
+        plt.figure(figsize=(16, 9))
+        plt.title(f'{ticker} forecasting results (test run {test_run})')
+        plt.plot(pd.concat([
+            self.__test_runs_dataframes.get(ticker).get(test_run).get('training'),
+            self.__test_runs_dataframes.get(ticker).get(test_run).get('validation'),
+            self.__test_runs_dataframes.get(ticker).get(test_run).get('test')
+        ], axis=0), label='adj_close', color=self.data_plot_colors[0])
+        plt.plot(pd.Series(
+            predictions.flatten(),
+            index=self.__test_runs_dataframes.get(ticker).get(test_run).get('test').index[self.__config.window_size:]
+        ), label='model_predictions', color=self.model_predictions_plot_color)
+        plt.legend(loc='best')
+        plt.grid(True)
+        plt.savefig(f'{path}/test_run_{test_run}.png')
         plt.close()
 
     @staticmethod
@@ -199,7 +217,7 @@ class DataManager:
             print(f'{Fore.LIGHTYELLOW_EX} [ {self.__config.uuid} ] No local data found for the model. '
                   f'{Style.RESET_ALL}')
 
-    def is_local_data_available(self) -> bool:
+    def check_data_availability(self) -> bool:
         if (len(self.__test_runs_dataframes) == len(self.__tickers) and
                 len(self.__test_runs_processed_dataframes) == len(self.__tickers)):
             return True
@@ -235,11 +253,11 @@ class DataManager:
                                                           f'{periods[3].to_date_string()}']
                             }
                         })
-                        self.plot_data(f'{ticker} original data subset (test run {test_run})',
-                                       dataframes.get(test_run).get('training'),
-                                       dataframes.get(test_run).get('validation'),
-                                       dataframes.get(test_run).get('test'),
-                                       f'{png_export}/test_run_{test_run}_phase_1.png')
+                        self.plot_datasets(f'{ticker} original data subset (test run {test_run})',
+                                           dataframes.get(test_run).get('training'),
+                                           dataframes.get(test_run).get('validation'),
+                                           dataframes.get(test_run).get('test'),
+                                           f'{png_export}/test_run_{test_run}_phase_1.png')
                     self.__test_runs_dataframes.update({ticker: dataframes})
         else:
             print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
@@ -262,11 +280,11 @@ class DataManager:
                         'test': np.log(self.__test_runs_dataframes.get(ticker).get(test_run).get('test')
                                        ['adj_close'])},
                 })
-                self.plot_data(f'{ticker} homogenized data subset (test run {test_run})',
-                               processed_dataframes.get(test_run).get('training'),
-                               processed_dataframes.get(test_run).get('validation'),
-                               processed_dataframes.get(test_run).get('test'),
-                               f'{png_export}/test_run_{test_run}_phase_2.png')
+                self.plot_datasets(f'{ticker} homogenized data subset (test run {test_run})',
+                                   processed_dataframes.get(test_run).get('training'),
+                                   processed_dataframes.get(test_run).get('validation'),
+                                   processed_dataframes.get(test_run).get('test'),
+                                   f'{png_export}/test_run_{test_run}_phase_2.png')
             self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
 
     def export_dataframes(self) -> None:
@@ -372,9 +390,9 @@ class DataManager:
 
     def reconstruct_and_export_results(self, ticker) -> None:
         for test_run in self.__test_runs_periods.keys():
-            png_path = f'./images/predictions/{ticker}'
-            if not os.path.exists(png_path):
-                os.makedirs(png_path)
+            images_path = f'./images/predictions/{ticker}'
+            if not os.path.exists(images_path):
+                os.makedirs(images_path)
 
             predictions = np.array(self.__test_runs_predictions.get(ticker).get(test_run)).reshape(-1, 1)
             predictions_mae = mean_absolute_error(
@@ -392,7 +410,7 @@ class DataManager:
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
             self.export_results(ticker, test_run, predictions, predictions_mae, predictions_mape,
                                 predictions_mse, predictions_rmse, backtracked_predictions_aes)
-            self.plot_results(ticker, test_run, predictions, png_path)
+            self.plot_results(ticker, test_run, predictions, images_path)
 
     def export_results(self, ticker, test_run, predictions, predictions_mae, predictions_mape, predictions_mse,
                        predictions_rmse, backtracked_aes) -> None:
@@ -410,20 +428,3 @@ class DataManager:
         }, index=self.__test_runs_dataframes.get(ticker).get(test_run).get('test').index[self.__config.window_size:])
         model_results.to_csv(f'{data_path}/test_run_{test_run}.csv', encoding='utf-8',
                              sep=',', decimal='.', index_label='Date')
-
-    def plot_results(self, ticker, test_run, predictions, path) -> None:
-        plt.figure(figsize=(16, 9))
-        plt.title(f'{ticker} forecasting results (test run {test_run})')
-        plt.plot(pd.concat([
-            self.__test_runs_dataframes.get(ticker).get(test_run).get('training'),
-            self.__test_runs_dataframes.get(ticker).get(test_run).get('validation'),
-            self.__test_runs_dataframes.get(ticker).get(test_run).get('test')
-        ], axis=0), label='adj_close')
-        plt.plot(pd.Series(
-            predictions.flatten(),
-            index=self.__test_runs_dataframes.get(ticker).get(test_run).get('test').index[self.__config.window_size:]
-        ), label='model_predictions')
-        plt.legend(loc='best')
-        plt.grid(True)
-        plt.savefig(f'{path}/test_run_{test_run}.png')
-        plt.close()

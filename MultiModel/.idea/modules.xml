@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/EURONEXT.iml" filepath="$PROJECT_DIR$/.idea/EURONEXT.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/MultiModel.iml" filepath="$PROJECT_DIR$/.idea/MultiModel.iml" />
     </modules>
   </component>
 </project>
