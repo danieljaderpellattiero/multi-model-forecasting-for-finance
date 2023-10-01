@@ -88,12 +88,12 @@ The Market Analysis team provided Limit Order Book (intra-day) data from 1st Sep
 
 ### The datasets
 
-For each financial instrument an amount of "test runs", equals to the number of trading days within the aforementioned interval, is generated. ( _1 trading day equals to 1 test run_ )  
-Because of the data amount and granularity three equal shifts are extracted from the single trading day, according to the subsequent schema:
+For each financial instrument an amount of "test runs", three for every trading day within the aforementioned interval, is generated. ( _1 trading day equals to 3 test runs_ )  
+Because of the data amount and granularity the three test runs are extracted from the single trading day, according to the subsequent schema:
 
-- **1<sup>st</sup> shift:** trading data included between **09:00 - 12:00**.
-- **2<sup>nd</sup> shift:** trading data included between **12:00 - 15:00**.
-- **3<sup>rd</sup> shift:** trading data included between **15:00 - 18:00**.
+- **1<sup>st</sup> test run:** trading data included between **09:00 - 12:00**.
+- **2<sup>nd</sup> test run:** trading data included between **12:00 - 15:00**.
+- **3<sup>rd</sup> test run:** trading data included between **15:00 - 18:00**.
 
 > NdR: It is worth noticing that negotiations on the Euronext Milan market take place with the following schedules:
 > 
@@ -105,8 +105,8 @@ Because of the data amount and granularity three equal shifts are extracted from
 > > [1-2] _Pre-auction, validation, opening and conclusion of contracts._  
 > > [3] _Proposal entry phase, negotiation phase._
 
-In order to train the deep-learning models each shift is further split into three datasets, according to the following proportions:
+In order to train the deep-learning models each test run is further split into three datasets, according to the following proportions:
 
-- **Training set: 80%** of the shift data.
-- **Validation set: 15%** of the shift data.
-- **Test set: 5%** of the shift data.
+- **Training set: 80%** of the test run data.
+- **Validation set: 15%** of the test run data.
+- **Test set: 5%** of the test run data.

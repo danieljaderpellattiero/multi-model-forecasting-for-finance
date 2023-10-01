@@ -21,9 +21,10 @@ class EuronextDataLoader:
         self.__config = Config(self.__uuid, config_params)
         self.__dataframes = {}
 
-    def plot_dataset(self, ticker, trading_day, shift, metric, training_data, validation_data, test_data, path) -> None:
+    def plot_dataset(self, ticker, trading_day, test_run, metric, training_data, validation_data, test_data, path) \
+            -> None:
         plt.figure(figsize=(16, 9))
-        plt.title(f'{ticker} - {trading_day} - shift nr.{shift} - freq. {metric}')
+        plt.title(f'{ticker} - {trading_day} - test run nr.{test_run} - freq. {metric}')
         plt.plot(training_data, label='training_set', color=self.data_plot_colors[0])
         plt.plot(validation_data, label='validation_set', color=self.data_plot_colors[1])
         plt.plot(test_data, label='test_set', color=self.data_plot_colors[2])
@@ -76,29 +77,30 @@ class EuronextDataLoader:
                 if exported_test_runs >= test_runs_limit:
                     break
                 if trading_day.to_date_string() in self.__dataframes.get(ticker).index:
-                    for shift in range(0, self.__config.dly_tr_amt):
-                        begin, end = self.__config.get_shifts_schedules(trading_day, shift)
-                        shift_dataframe = self.__dataframes.get(ticker).copy()[begin:end]
-                        shift_dataframe = shift_dataframe.groupby(shift_dataframe.index).agg({'PRICE': 'mean'})
-                        training_split, validation_split = self.__config.get_shifts_splits(shift_dataframe.shape[0])
-                        training_dataframe = shift_dataframe[:training_split]
-                        validation_dataframe = shift_dataframe[training_split:validation_split]
-                        test_dataframe = shift_dataframe[validation_split:]
+                    for test_run in range(0, self.__config.dly_tr_amt):
+                        begin, end = self.__config.get_test_run_schedules(trading_day, test_run)
+                        test_run_dataframe = self.__dataframes.get(ticker).copy()[begin:end]
+                        test_run_dataframe = test_run_dataframe.groupby(test_run_dataframe.index).agg({'PRICE': 'mean'})
+                        training_split, validation_split = self.__config.get_test_run_splits(test_run_dataframe
+                                                                                             .shape[0])
+                        training_dataframe = test_run_dataframe[:training_split]
+                        validation_dataframe = test_run_dataframe[training_split:validation_split]
+                        test_dataframe = test_run_dataframe[validation_split:]
                         for resample in ['1s', '5s', '10s']:
                             training_dataframe_resampled = training_dataframe.resample(resample).mean().ffill()
                             validation_dataframe_resampled = validation_dataframe.resample(resample).mean().ffill()
                             test_dataframe_resampled = test_dataframe.resample(resample).mean().ffill()
-                            self.plot_dataset(ticker, trading_day.format('dddd Do [of] MMMM YYYY'), shift, resample,
+                            self.plot_dataset(ticker, trading_day.format('dddd Do [of] MMMM YYYY'), test_run, resample,
                                               training_dataframe_resampled, validation_dataframe_resampled,
                                               test_dataframe_resampled, f'{ticker_images_path}/'
-                                                                        f'{trading_day.to_date_string()}_shift_{shift}'
-                                                                        f'_{resample}.png')
+                                                                        f'{trading_day.to_date_string()}_test_run_'
+                                                                        f'{test_run}_{resample}.png')
                             training_dataframe_resampled.to_csv(f'{ticker_datasets_path}/{trading_day.to_date_string()}'
-                                                                f'_shift_{shift}_training_{resample}.csv')
+                                                                f'_test_run_{test_run}_training_{resample}.csv')
                             validation_dataframe_resampled.to_csv(f'{ticker_datasets_path}/'
-                                                                  f'{trading_day.to_date_string()}_shift_{shift}'
+                                                                  f'{trading_day.to_date_string()}_test_run_{test_run}'
                                                                   f'_validation_{resample}.csv')
                             test_dataframe_resampled.to_csv(f'{ticker_datasets_path}/{trading_day.to_date_string()}'
-                                                            f'_shift_{shift}_test_{resample}.csv')
+                                                            f'_test_run_{test_run}_test_{resample}.csv')
                     exported_test_runs += 1
             exported_tickers += 1

@@ -35,11 +35,11 @@ class Config:
     def check_test_runs_consistency(self) -> bool:
         return True if len(self.__daily_test_runs_schedules) == self.__daily_test_runs_amount + 1 else False
 
-    def get_shifts_schedules(self, dt_instance, shift) -> tuple:
+    def get_test_run_schedules(self, dt_instance, shift) -> tuple:
         return (dt_instance.add(hours=self.__daily_test_runs_schedules[shift]).to_atom_string(),
                 dt_instance.add(hours=self.__daily_test_runs_schedules[shift + 1]).to_atom_string())
 
-    def get_shifts_splits(self, shift) -> tuple:
+    def get_test_run_splits(self, shift) -> tuple:
         return (int(shift * self.__daily_test_runs_datasets_splits_percentages[0]),
                 int(shift * (self.__daily_test_runs_datasets_splits_percentages[0] +
                              self.__daily_test_runs_datasets_splits_percentages[1])))
