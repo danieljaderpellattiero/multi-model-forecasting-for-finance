@@ -14,6 +14,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
 class StackedAutoEncoders:
+    models_path = './models'
 
     def __init__(self, ticker, parent_model_config) -> None:
         self.__model = None
@@ -40,7 +41,7 @@ class StackedAutoEncoders:
         return self.__decoder
 
     def import_model(self) -> bool:
-        autoencoder_path = f'./models/{self.__ticker}/SAEs'
+        autoencoder_path = f'{self.models_path}/{self.__ticker}/SAEs'
         if os.path.exists(autoencoder_path):
             self.__model = keras.models.load_model(autoencoder_path, compile=False, safe_mode=True)
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} ] Local SAEs found. '
@@ -86,7 +87,7 @@ class StackedAutoEncoders:
     def train_model(self, training_dataset, validation_dataset, test_run, shuffled=True) -> None:
         if self.__model is not None:
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} | Test run {test_run} ] '
-                  f'Training SAEs {Style.RESET_ALL}')
+                  f'Training SAEs ... {Style.RESET_ALL}')
             self.__model.fit(training_dataset, epochs=self.__config.epochs,
                              shuffle=shuffled, validation_data=validation_dataset,
                              callbacks=[self.__early_stopper, self.__model_checkpoints],

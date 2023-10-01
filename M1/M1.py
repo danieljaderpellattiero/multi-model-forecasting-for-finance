@@ -13,10 +13,14 @@ class M1:
         self.__data_mgmt = DataManager(self.__config, tickers)
 
     def run(self) -> None:
-        self.__data_mgmt.init_periods()
+        if not self.__config.enx_data:
+            self.__data_mgmt.init_periods()
         self.__data_mgmt.import_local_data()
         if not self.__data_mgmt.check_data_availability():
-            self.__data_mgmt.download_dataframes()
+            if not self.__config.enx_data:
+                self.__data_mgmt.download_dataframes()
+            else:
+                self.__data_mgmt.import_enx_dataframes()
             self.__data_mgmt.normalize_dataframes()
             self.__data_mgmt.denoise_dataframes()
             self.__data_mgmt.export_dataframes()

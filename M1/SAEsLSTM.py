@@ -13,6 +13,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
 class SAEsLSTM:
+    models_path = './models'
 
     def __init__(self, ticker, parent_model_config) -> None:
         self.__model = None
@@ -30,7 +31,7 @@ class SAEsLSTM:
                                                    save_best_only=True, mode='auto')
 
     def import_model(self) -> bool:
-        lstm_path = f'./models/{self.__ticker}/SAEs-LSTM'
+        lstm_path = f'{self.models_path}/{self.__ticker}/SAEs-LSTM'
         if os.path.exists(lstm_path):
             self.__model = keras.models.load_model(lstm_path, compile=False, safe_mode=True)
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} ] Local SAEs-LSTM found. '
@@ -74,10 +75,10 @@ class SAEsLSTM:
         if self.__model is not None:
             if test_run == 0:
                 print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} | Test run {test_run} ] '
-                      f'Training SAEs-LSTM {Style.RESET_ALL}')
+                      f'Training SAEs-LSTM ... {Style.RESET_ALL}')
             else:
                 print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} | Test run {test_run} ] '
-                      f'Fine tuning SAEs-LSTM {Style.RESET_ALL}')
+                      f'Fine tuning SAEs-LSTM ... {Style.RESET_ALL}')
             self.__model.fit(training_dataset, epochs=self.__config.epochs, shuffle=shuffled,
                              validation_data=validation_dataset,
                              callbacks=[self.__early_stopper, self.__model_checkpoints],
