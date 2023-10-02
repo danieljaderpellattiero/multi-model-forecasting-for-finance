@@ -20,7 +20,7 @@ class M3:
                 self.__data_mgmt.download_dataframes()
             else:
                 self.__data_mgmt.import_enx_dataframes()
-            self.__data_mgmt.homogenize_dataframes()
+            self.__data_mgmt.normalize_dataframes()
             self.__data_mgmt.export_dataframes()
             if not self.__data_mgmt.check_data_availability():
                 exit(1)

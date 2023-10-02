@@ -97,7 +97,7 @@ class DataManager:
 
     def plot_predictions(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
-        plt.title(f'{ticker} forecasting outcome (test run {test_run})')
+        plt.title(f'{ticker} forecasting outcome - test run {test_run}')
         plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run),
                  label='adj_close' if not self.__config.enx_data else 'trade_price',
                  color=self.data_plot_colors[0])
@@ -169,9 +169,9 @@ class DataManager:
                 ticker_path = f'{self.data_path}/{ticker}'
                 if os.path.exists(ticker_path):
                     is_missing_data = False
+                    scalers = {}
                     dataframes = {}
                     processed_dataframes = {}
-                    scalers = {}
                     for test_run in range(0, self.__config.tr_amt):
                         if not is_missing_data:
                             test_run_path = f'{ticker_path}/test_run_{test_run}'
@@ -209,8 +209,8 @@ class DataManager:
                             else:
                                 is_missing_data = True
                     if not is_missing_data:
-                        self.__test_runs_dataframes.update({ticker: dataframes})
                         self.__test_runs_scalers.update({ticker: scalers})
+                        self.__test_runs_dataframes.update({ticker: dataframes})
                         self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
                         self.__cached_tickers.update({ticker: True})
                         imported_dataframes += 1
@@ -268,7 +268,7 @@ class DataManager:
                                                             f'{periods[3].to_date_string()}']
                             }
                         })
-                        self.plot_dataset(f'{ticker} original data subset (test run {test_run})',
+                        self.plot_dataset(f'{ticker} original data subset - test run {test_run}',
                                           processed_dataframes.get(test_run).get('training'),
                                           processed_dataframes.get(test_run).get('validation'),
                                           processed_dataframes.get(test_run).get('test'),
@@ -307,7 +307,7 @@ class DataManager:
                                 'test': pd.read_csv(test_set_path, index_col='Trade_timestamp', parse_dates=True)
                             }
                         })
-                        self.plot_dataset(f'{ticker} original data subset (test run {test_run})',
+                        self.plot_dataset(f'{ticker} original data subset - {test_run}',
                                           processed_dataframes.get(test_run).get('training'),
                                           processed_dataframes.get(test_run).get('validation'),
                                           processed_dataframes.get(test_run).get('test'),
@@ -334,7 +334,7 @@ class DataManager:
                     scaler.transform(self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('validation'))
                     scaler.transform(self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test'))
                     scalers.update({test_run: scaler})
-                    self.plot_dataset(f'{ticker} normalized data subset (test run {test_run})',
+                    self.plot_dataset(f'{ticker} normalized data subset - test run {test_run}',
                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('training'),
                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('validation'),
                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test'),
@@ -362,7 +362,7 @@ class DataManager:
                                                    columns=[('adj_close' if not self.__config.enx_data
                                                              else 'trade_price')])
                         })
-                    self.plot_dataset(f'{ticker} denoised data subset (test run {test_run})',
+                    self.plot_dataset(f'{ticker} denoised data subset - test run {test_run}',
                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('training'),
                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('validation'),
                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test'),
@@ -509,5 +509,5 @@ class DataManager:
                  .index[-predictions.shape[0]:])
         model_predictions.to_csv((f'{predictions_path}/test_run_{test_run}.csv' if not self.__config.enx_data else
                                   f'{predictions_path}/test_run_{test_run}_{self.__config.enx_data_freq}.csv'),
-                                 encoding='utf-8', sep=',', decimal='.',
+                                 encoding='utf-8', sep=',', decimal=',',
                                  index_label='Date' if not self.__config.enx_data else 'Trade_timestamp')

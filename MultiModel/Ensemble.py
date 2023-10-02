@@ -2,6 +2,7 @@ import os.path
 import matplotlib
 import numpy as np
 import pandas as pd
+import pendulum as time
 import matplotlib.pyplot as plt
 
 from colorama import Fore, Style
@@ -12,20 +13,22 @@ matplotlib.use('Agg')
 
 class Ensemble:
     data_path = './data'
-    png_path = './images'
+    images_path = './images'
     results_path = './results'
     models_predictions_path = './models_predictions'
-    datasets = ['training', 'validation', 'test']
-    ensembling_methods = ['democratic', 'statically_weighted', 'dynamically_weighted']
+    ensembling_methods = ['unweighted', 'statically_weighted', 'dynamically_weighted']
     data_plot_color = 'royalblue'
     ensembled_predictions_plot_color = 'orchid'
-    models_predictions_plot_colors = ['limegreen', 'crimson', 'gold']
+    models_predictions_plot_colors = ['limegreen', 'coral', 'gold']
 
-    def __init__(self, tickers, test_runs, models_names, static_ensembling_metric) -> None:
+    def __init__(self, enx_data, enx_data_frequency, test_runs, static_ensembling_metric, tickers, models_names
+                 ) -> None:
         self.__uuid = 'MM'
         self.__tickers = tickers
+        self.__enx_data = enx_data
         self.__test_runs = test_runs
         self.__models_names = models_names
+        self.__enx_data_frequency = enx_data_frequency
         self.__static_ensembling_metric = static_ensembling_metric
         self.__data = {}
         self.__models_predictions = {}
@@ -43,7 +46,7 @@ class Ensemble:
 
     @staticmethod
     def ensemble_predictions(predictions, static_errors, dynamic_errors, method) -> float:
-        if method == 'democratic':
+        if method == 'unweighted':
             return np.mean(predictions)
         elif method == 'statically_weighted':
             return np.dot(predictions, static_errors) / np.sum(static_errors)
@@ -60,36 +63,36 @@ class Ensemble:
             for test_run in range(0, self.__test_runs):
                 if is_data_missing:
                     break
-                sub_dataframes = {}
-                for dataset in self.datasets:
-                    if is_data_missing:
-                        break
-                    time_series_path = f'{self.data_path}/{ticker}/test_run_{test_run}_{dataset}.csv'
-                    if os.path.exists(time_series_path):
-                        sub_dataframes.update({dataset: pd.read_csv(time_series_path, index_col='Date',
-                                                                    parse_dates=True)})
-                    else:
-                        is_data_missing = True
-                        print(f'{Fore.LIGHTRED_EX} [ {self.__uuid} ] '
-                              f'Missing data for {ticker} - Test run {test_run} - {dataset} set. {Style.RESET_ALL}')
-                dataframes.update({test_run: sub_dataframes})
-                sub_predictions_dataframes = []
+                test_set_path = (f'{self.data_path}/{ticker}/test_run_{test_run}_test.csv' if not self.__enx_data else
+                                 f'{self.data_path}/{ticker}/test_run_{test_run}_test_{self.__enx_data_frequency}.csv')
+                if os.path.exists(test_set_path):
+                    test_set_dataframe = pd.read_csv(test_set_path, index_col=('Date' if not self.__enx_data else
+                                                                               'Trade_timestamp'), parse_dates=True)
+                    dataframes.update({test_run: test_set_dataframe})
+                else:
+                    is_data_missing = True
+                    print(f'{Fore.LIGHTRED_EX} [ {self.__uuid} ] '
+                          f'Missing test set for {ticker} - Test run {test_run}. {Style.RESET_ALL}')
+                models_predictions_dataframes = []
                 for model in self.__models_names:
                     if is_data_missing:
                         break
                     model_predictions_path = (f'{self.models_predictions_path}/{model}/{ticker}/'
-                                              f'test_run_{test_run}.csv')
+                                              f'test_run_{test_run}.csv' if not self.__enx_data else
+                                              f'{self.models_predictions_path}/{model}/{ticker}/'
+                                              f'test_run_{test_run}_{self.__enx_data_frequency}.csv')
                     if os.path.exists(model_predictions_path):
                         dataframe = pd.read_csv(model_predictions_path, encoding='utf-8', sep=',', decimal='.',
-                                                index_col='Date', parse_dates=True)
+                                                index_col=('Date' if not self.__enx_data else 'Trade_timestamp'),
+                                                parse_dates=True)
                         dataframe = dataframe.add_prefix(f'{model}_')
-                        sub_predictions_dataframes.append(dataframe)
+                        models_predictions_dataframes.append(dataframe)
                     else:
                         is_data_missing = True
                         print(f'{Fore.LIGHTRED_EX} [ {self.__uuid} ] '
                               f'Missing model predictions for {model} - {ticker} - Test run {test_run}. '
                               f'{Style.RESET_ALL}')
-                predictions_dataframes.update({test_run: sub_predictions_dataframes})
+                predictions_dataframes.update({test_run: models_predictions_dataframes})
             self.__data.update({ticker: dataframes})
             self.__models_predictions.update({ticker: predictions_dataframes})
         if not is_data_missing:
@@ -109,18 +112,23 @@ class Ensemble:
 
     def plot_predictions(self, mode) -> None:
         for ticker in self.__tickers:
-            ticker_png_path = f'{self.png_path}/{ticker}/{mode}_predictions'
+            ticker_png_path = f'{self.images_path}/{ticker}/{mode}_predictions'
             if not os.path.exists(ticker_png_path):
                 os.makedirs(ticker_png_path)
 
             for test_run in range(0, self.__test_runs):
+                day = (time.instance(self.__data.get(ticker).get(test_run).index[0])
+                       .format('dddd Do [of] MMMM YYYY'))
+                title = f'{ticker} - {day} - test run {test_run} - {mode} predictions'
                 plt.figure(figsize=(16, 9))
-                plt.title(f'{ticker} (test run {test_run}) - {mode} predictions')
-                plt.plot(self.__data.get(ticker).get(test_run).get('test'), label='test_set_adj_close',
+                plt.title(title)
+                plt.plot(self.__data.get(ticker).get(test_run),
+                         label=('test_set_adj_close' if not self.__enx_data else 'test_set_trade_price'),
                          color=self.data_plot_color)
                 for model_index, model in enumerate(self.__models_names):
                     plt.plot(self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values'],
-                             label=f'{model}_forecasted_adj_close',
+                             label=(f'{model}_forecasted_adj_close' if not self.__enx_data else
+                                    f'{model}_forecasted_trade_price'),
                              color=self.models_predictions_plot_colors[model_index])
                 if mode == 'ensembled':
                     for method_index, method in enumerate(self.ensembling_methods):
@@ -129,13 +137,16 @@ class Ensemble:
                             label=f'{method}', color=self.ensembled_predictions_plot_color)
                         plt.legend(loc='best')
                         plt.grid(True)
-                        plt.savefig(f'{ticker_png_path}/test_run_{test_run}_{method[0:2]}.png')
+                        plt.savefig(f'{ticker_png_path}/test_run_{test_run}_{method[0:2]}.png' if not self.__enx_data
+                                    else f'{ticker_png_path}/test_run_{test_run}_{method[0:2]}_'
+                                         f'{self.__enx_data_frequency}.png')
                         ensembled_predictions_plotted.remove()
                     plt.close()
                 else:
                     plt.legend(loc='best')
                     plt.grid(True)
-                    plt.savefig(f'{ticker_png_path}/test_run_{test_run}.png')
+                    plt.savefig(f'{ticker_png_path}/test_run_{test_run}.png' if not self.__enx_data else
+                                f'{ticker_png_path}/test_run_{test_run}_{self.__enx_data_frequency}.png')
                     plt.close()
 
     def get_errors(self, ticker, test_run, mode, row_index=-1) -> np.array:
@@ -176,7 +187,7 @@ class Ensemble:
                 os.makedirs(f'{self.results_path}/{ticker}')
             for test_run in range(0, self.__test_runs):
                 metrics_dataframe = pd.DataFrame()
-                test_set_data = self.__data.get(ticker).get(test_run).get('test').iloc[
+                test_set_data = self.__data.get(ticker).get(test_run).iloc[
                                 -self.__ensembled_predictions.get(ticker).get(test_run).shape[0]:]
                 for method_index, method in enumerate(self.ensembling_methods):
                     for metric in [mean_absolute_error, mean_absolute_percentage_error, mean_squared_error]:
@@ -188,4 +199,4 @@ class Ensemble:
                             metric(test_set_data, self.__models_predictions.get(ticker).get(test_run)[
                                 f'{model}_forecasted_values']))
                 metrics_dataframe.to_csv(f'{self.results_path}/{ticker}/test_run_{test_run}.csv', index=True,
-                                         encoding='utf-8', sep=';', decimal='.')
+                                         encoding='utf-8', sep=';', decimal=',')

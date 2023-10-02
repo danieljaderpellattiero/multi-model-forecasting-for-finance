@@ -44,10 +44,10 @@ Finally, a software that can effectively and efficiently combine these algorithm
 ### Further notes
 
 - The models will print out step-by-step notifications in the terminal from which they are launched.
-- The models will locally save the stocks data, in order to allow multiple models to be built from them. ( _data will be located inside the `./M{model_number}/data` folder_ )
-- The models will locally save the deep learning models generated for each stock, so that they can be reloaded directly from the disk. ( _models will be located inside the `./M{model_number}/models` folder_ )
-- The models will locally export the graphs of each stocks datasets and the graphs of the respective forecasts. ( _graphs will be located inside the `./M{model_number}/images/data-preprocessing` and `./M{model_number}/images/predictions` folders_ )
-- The models will export in a csv file the forecasted values and all the error metrics needed to use the predictions of the various models jointly. ( _csv files will be located inside the `./M{model_number}/predictions` folder_ )
+- The models will locally save the stocks data, in order to allow multiple models to be built from them. ( _data will be located inside the `./M[model_number]/data` folder_ )
+- The models will locally save the deep learning models generated for each stock, so that they can be reloaded directly from the disk. ( _models will be located inside the `./M[model_number]/models` folder_ )
+- The models will locally export the graphs of each stocks datasets and the graphs of the respective forecasts. ( _graphs will be located inside the `./M[model_number]/images/data-preprocessing` and `./M[model_number]/images/predictions` folders_ )
+- The models will export in a csv file the forecasted values and all the error metrics needed to use the predictions of the various models jointly. ( _csv files will be located inside the `./M[model_number]/predictions` folder_ )
 
 > NdR: Models code documentation will be enriched at a later date.
 
@@ -58,8 +58,8 @@ Finally, a software that can effectively and efficiently combine these algorithm
 > Assumption: Suppose we ran the models for 1 test run on the MSFT ticker.
 
 1. Create inside `./MultiModel/data` a folder named `MSFT`.
-2. Place inside the aforementioned folder the stock data. ( _data can be taken from `./M3/data/MSFT/test_run_0/[training|validation|test].csv`\, taking care to add the "test\_run\_0\_" prefix to each csv file name_ )
-3. Create inside `./MultiModel/models_predictions/M{model_number}` a folder named `MSFT` and place inside it ( them ) the respective predictions of each model. ( _predictions can be taken from the `./M{model_number}/predictions/MSFT/` folder_ )
+2. Place inside the aforementioned folder the stock data. ( _data can be taken from `./M3/data/MSFT/test_run_0/test[_freq].csv`\, taking care to add the "test\_run\_0\_" prefix to each csv file name_ )
+3. Create inside `./MultiModel/models_predictions/M[model_number]` a folder named `MSFT` and place inside it ( them ) the respective predictions of each model. ( _predictions can be taken from the `./M[model_number]/predictions/MSFT/` folder_ )
 4. Run the Multi-model by launching the `./MultiModel/Main.py` file.
 5. The Multi-model will export the graphs for each stocks single and ensembled predictions. ( _graphs will be located inside the `./MultiModel/images/MSFT/single_predictions` and `./MultiModel/images/MSFT/ensembled_predictions` folders_ )
 6. The Multi-model will export in a csv file the metrics for each stocks single and ensembled predictions. ( _csv files will be located inside the `./MultiModel/results/MSFT` folder_ )

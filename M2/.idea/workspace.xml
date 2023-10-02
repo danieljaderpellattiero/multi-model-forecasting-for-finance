@@ -6,22 +6,14 @@
   <component name="ChangeListManager">
     <list default="true" id="f0351019-eef3-47a2-ba25-b00a38b40a81" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/../M1/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M1/M1.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/M1.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M1/SAEsLSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/SAEsLSTM.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMDNLSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/CMDNLSTM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/Config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/M2.py" beforeDir="false" afterPath="$PROJECT_DIR$/M2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TSDecomposer.py" beforeDir="false" afterPath="$PROJECT_DIR$/TSDecomposer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/.idea/M4.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/.idea/M3.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/CNNLSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/CNNLSTM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/Config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../M3/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/DataManager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../M3/M3.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/M3.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/Main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MultiModel/Ensemble.py" beforeDir="false" afterPath="$PROJECT_DIR$/../MultiModel/Ensemble.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MultiModel/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../MultiModel/Main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,15 +32,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "D:/multi-model-forecasting-for-finance/M3",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/multi-model-forecasting-for-finance/M2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="Main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="M2" />
@@ -98,5 +90,16 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/DataManager.py</url>
+          <line>538</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

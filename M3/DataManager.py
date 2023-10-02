@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 from tensorflow import keras
+from joblib import dump, load
 from colorama import Fore, Style
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
 
 matplotlib.use('Agg')
@@ -94,16 +96,13 @@ class DataManager:
 
     def plot_predictions(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
-        plt.title(f'{ticker} forecasting outcome (test run {test_run})')
-        plt.plot(pd.concat([
-            self.__test_runs_dataframes.get(ticker).get(test_run).get('training'),
-            self.__test_runs_dataframes.get(ticker).get(test_run).get('validation'),
-            self.__test_runs_dataframes.get(ticker).get(test_run).get('test')
-        ], axis=0), label=('adj_close' if not self.__config.enx_data else 'trade_price'),
-            color=self.data_plot_colors[0])
+        plt.title(f'{ticker} forecasting outcome - test run {test_run}')
+        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run),
+                 label=('adj_close' if not self.__config.enx_data else 'trade_price'),
+                 color=self.data_plot_colors[0])
         plt.plot(pd.Series(
             predictions.flatten(),
-            index=self.__test_runs_dataframes.get(ticker).get(test_run).get('test').index[self.__config.window_size:]
+            index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:]
         ), label='model_predictions', color=self.model_predictions_plot_color)
         plt.legend(loc='best')
         plt.grid(True)
@@ -168,65 +167,47 @@ class DataManager:
                 ticker_path = f'{self.data_path}/{ticker}'
                 if os.path.exists(ticker_path):
                     is_missing_data = False
+                    scalers = {}
                     dataframes = {}
                     processed_dataframes = {}
                     for test_run in range(0, self.__config.tr_amt):
                         if not is_missing_data:
                             test_run_path = f'{ticker_path}/test_run_{test_run}'
+                            dataframe_path = (f'{test_run_path}/adj_close.csv' if not self.__config.enx_data else
+                                              f'{test_run_path}/trade_price_{self.__config.enx_data_freq}.csv')
                             training_set_path = (f'{test_run_path}/training.csv' if not self.__config.enx_data else
                                                  f'{test_run_path}/training_{self.__config.enx_data_freq}.csv')
-                            training_proc_set_path = (f'{test_run_path}/training_processed.csv' if not
-                                                      self.__config.enx_data else f'{test_run_path}/training_processed'
-                                                      f'_{self.__config.enx_data_freq}.csv')
                             validation_set_path = (f'{test_run_path}/validation.csv' if not self.__config.enx_data else
                                                    f'{test_run_path}/validation_{self.__config.enx_data_freq}.csv')
-                            validation_proc_set_path = (f'{test_run_path}/validation_processed.csv' if not
-                                                        self.__config.enx_data else f'{test_run_path}/validation'
-                                                        f'_processed_{self.__config.enx_data_freq}.csv')
                             test_set_path = (f'{test_run_path}/test.csv' if not self.__config.enx_data else
                                              f'{test_run_path}/test_{self.__config.enx_data_freq}.csv')
-                            test_proc_set_path = (f'{test_run_path}/test_processed.csv' if not self.__config.enx_data
-                                                  else f'{test_run_path}/test_processed'
-                                                       f'_{self.__config.enx_data_freq}.csv')
-                            if (os.path.exists(test_run_path) and os.path.exists(training_set_path) and
-                                    os.path.exists(training_proc_set_path) and os.path.exists(validation_set_path) and
-                                    os.path.exists(validation_proc_set_path) and os.path.exists(test_set_path) and
-                                    os.path.exists(test_proc_set_path)):
-                                dataframes.update({
-                                    test_run: {
-                                        'training': pd.read_csv(training_set_path,
-                                                                index_col=('Date' if not self.__config.enx_data else
-                                                                           'Trade_timestamp'),
-                                                                parse_dates=True),
-                                        'validation': pd.read_csv(validation_set_path,
-                                                                  index_col=('Date' if not self.__config.enx_data else
-                                                                             'Trade_timestamp'),
-                                                                  parse_dates=True),
-                                        'test': pd.read_csv(test_set_path,
-                                                            index_col=('Date' if not self.__config.enx_data else
-                                                                       'Trade_timestamp'),
-                                                            parse_dates=True)
-                                    }
-                                })
+                            scaler_path = (f'{test_run_path}/scaler.joblib' if not self.__config.enx_data else
+                                           f'{test_run_path}/scaler_{self.__config.enx_data_freq}.joblib')
+                            if (os.path.exists(test_run_path) and os.path.exists(dataframe_path) and
+                                    os.path.exists(training_set_path) and os.path.exists(validation_set_path) and
+                                    os.path.exists(test_set_path) and os.path.exists(scaler_path)):
+                                dataframes.update({test_run: pd.read_csv(dataframe_path,
+                                                                         index_col=('Date' if not self.__config.enx_data
+                                                                                    else 'Trade_timestamp'),
+                                                                         parse_dates=True)})
                                 processed_dataframes.update({
                                     test_run: {
-                                        'training': pd.read_csv(training_proc_set_path,
-                                                                index_col=('Date' if not self.__config.enx_data else
-                                                                           'Trade_timestamp'),
-                                                                parse_dates=True),
-                                        'validation': pd.read_csv(validation_proc_set_path,
-                                                                  index_col=('Date' if not self.__config.enx_data else
-                                                                             'Trade_timestamp'),
-                                                                  parse_dates=True),
-                                        'test': pd.read_csv(test_proc_set_path,
-                                                            index_col=('Date' if not self.__config.enx_data else
-                                                                       'Trade_timestamp'),
-                                                            parse_dates=True)
+                                        'training': pd.read_csv(training_set_path,
+                                                                index_col=('Date' if not self.__config.enx_data
+                                                                           else 'Trade_timestamp'), parse_dates=True),
+                                        'validation': pd.read_csv(validation_set_path,
+                                                                  index_col=('Date' if not self.__config.enx_data
+                                                                             else 'Trade_timestamp'), parse_dates=True),
+                                        'test': pd.read_csv(test_set_path,
+                                                            index_col=('Date' if not self.__config.enx_data
+                                                                       else 'Trade_timestamp'), parse_dates=True),
                                     }
                                 })
+                                scalers.update({test_run: load(scaler_path)})
                             else:
                                 is_missing_data = True
                     if not is_missing_data:
+                        self.__test_runs_scalers.update({ticker: scalers})
                         self.__test_runs_dataframes.update({ticker: dataframes})
                         self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
                         self.__cached_tickers.update({ticker: True})
@@ -266,25 +247,32 @@ class DataManager:
                     dataframe = dataframe.dropna(subset=['Adj Close'], inplace=False)
                     dataframe = dataframe.rename(columns={'Adj Close': 'adj_close'}, inplace=False)
                     dataframes = {}
+                    processed_dataframes = {}
                     for test_run in range(0, self.__config.tr_amt):
-                        dataframe_tmp = dataframe.copy(deep=True)
+                        dataframe_tmp_1 = dataframe.copy(deep=True)
+                        dataframe_tmp_2 = dataframe.copy(deep=True)
                         periods = self.__test_runs_periods.get(test_run)
                         dataframes.update({
-                            test_run: {
-                                'training': dataframe_tmp.loc[f'{periods[0].to_date_string()}':
-                                                              f'{periods[1].to_date_string()}'],
-                                'validation': dataframe_tmp.loc[f'{periods[1].add(days=1).to_date_string()}':
-                                                                f'{periods[2].to_date_string()}'],
-                                'test': dataframe_tmp.loc[f'{periods[2].add(days=1).to_date_string()}':
+                            test_run: dataframe_tmp_1.loc[f'{periods[0].to_date_string()}':
                                                           f'{periods[3].to_date_string()}']
+                        })
+                        processed_dataframes.update({
+                            test_run: {
+                                'training': dataframe_tmp_2.loc[f'{periods[0].to_date_string()}':
+                                                                f'{periods[1].to_date_string()}'],
+                                'validation': dataframe_tmp_2.loc[f'{periods[1].add(days=1).to_date_string()}':
+                                                                  f'{periods[2].to_date_string()}'],
+                                'test': dataframe_tmp_2.loc[f'{periods[2].add(days=1).to_date_string()}':
+                                                            f'{periods[3].to_date_string()}']
                             }
                         })
-                        self.plot_datasets(f'{ticker} original data subset (test run {test_run})',
-                                           dataframes.get(test_run).get('training'),
-                                           dataframes.get(test_run).get('validation'),
-                                           dataframes.get(test_run).get('test'),
+                        self.plot_datasets(f'{ticker} original data subset - test run {test_run}',
+                                           processed_dataframes.get(test_run).get('training'),
+                                           processed_dataframes.get(test_run).get('validation'),
+                                           processed_dataframes.get(test_run).get('test'),
                                            f'{ticker_png_path}/test_run_{test_run}_phase_1.png')
                     self.__test_runs_dataframes.update({ticker: dataframes})
+                    self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
         else:
             print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
                   f'Cannot download dataframes without internet connection. {Style.RESET_ALL}')
@@ -296,14 +284,19 @@ class DataManager:
                 if not os.path.exists(ticker_png_path):
                     os.makedirs(ticker_png_path)
                 dataframes = {}
+                processed_dataframes = {}
                 for test_run in range(0, self.__config.tr_amt):
                     test_run_path = f'{self.enx_data_path}/{ticker}/test_run_{test_run}'
+                    dataframe_path = f'{test_run_path}/trade_price_{self.__config.enx_data_freq}.csv'
                     training_set_path = f'{test_run_path}/training_{self.__config.enx_data_freq}.csv'
                     validation_set_path = f'{test_run_path}/validation_{self.__config.enx_data_freq}.csv'
                     test_set_path = f'{test_run_path}/test_{self.__config.enx_data_freq}.csv'
-                    if (os.path.exists(test_run_path) and os.path.exists(training_set_path) and
-                            os.path.exists(validation_set_path) and os.path.exists(test_set_path)):
-                        dataframes.update({
+                    if (os.path.exists(test_run_path) and os.path.exists(dataframe_path) and
+                            os.path.exists(training_set_path) and os.path.exists(validation_set_path) and
+                            os.path.exists(test_set_path)):
+                        dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Trade_timestamp',
+                                                                 parse_dates=True)})
+                        processed_dataframes.update({
                             test_run: {
                                 'training': pd.read_csv(training_set_path, index_col='Trade_timestamp',
                                                         parse_dates=True),
@@ -312,10 +305,10 @@ class DataManager:
                                 'test': pd.read_csv(test_set_path, index_col='Trade_timestamp', parse_dates=True)
                             }
                         })
-                        self.plot_datasets(f'{ticker} original data subset (test run {test_run})',
-                                           dataframes.get(test_run).get('training'),
-                                           dataframes.get(test_run).get('validation'),
-                                           dataframes.get(test_run).get('test'),
+                        self.plot_datasets(f'{ticker} original data subset - test run {test_run}',
+                                           processed_dataframes.get(test_run).get('training'),
+                                           processed_dataframes.get(test_run).get('validation'),
+                                           processed_dataframes.get(test_run).get('test'),
                                            f'{ticker_png_path}/test_run_{test_run}_phase_1.png')
                     else:
                         print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
@@ -323,29 +316,29 @@ class DataManager:
                               f'{Style.RESET_ALL}')
                         exit(1)
                 self.__test_runs_dataframes.update({ticker: dataframes})
+                self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
 
-    def homogenize_dataframes(self) -> None:
+    def normalize_dataframes(self) -> None:
         for ticker in self.__tickers:
-            ticker_png_path = f'{self.images_path}/data-preprocessing/{ticker}'
-            if not os.path.exists(ticker_png_path):
-                os.makedirs(ticker_png_path)
-            processed_dataframes = {}
-            for test_run in range(0, self.__config.tr_amt):
-                processed_dataframes.update({
-                    test_run: {
-                        'training': np.log(self.__test_runs_dataframes.get(ticker).get(test_run).get('training')
-                                           ['adj_close' if not self.__config.enx_data else 'trade_price']),
-                        'validation': np.log(self.__test_runs_dataframes.get(ticker).get(test_run).get('validation')
-                                             ['adj_close' if not self.__config.enx_data else 'trade_price']),
-                        'test': np.log(self.__test_runs_dataframes.get(ticker).get(test_run).get('test')
-                                       ['adj_close' if not self.__config.enx_data else 'trade_price'])},
-                })
-                self.plot_datasets(f'{ticker} homogenized data subset (test run {test_run})',
-                                   processed_dataframes.get(test_run).get('training'),
-                                   processed_dataframes.get(test_run).get('validation'),
-                                   processed_dataframes.get(test_run).get('test'),
-                                   f'{ticker_png_path}/test_run_{test_run}_phase_2.png')
-            self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
+            if not self.__cached_tickers.get(ticker):
+                ticker_png_path = f'{self.images_path}/data-preprocessing/{ticker}'
+                if not os.path.exists(ticker_png_path):
+                    os.makedirs(ticker_png_path)
+                scalers = {}
+                for test_run in range(0, self.__config.tr_amt):
+                    scaler = MinMaxScaler(copy=False, clip=False)
+                    scaler.fit(self.__test_runs_dataframes.get(ticker).get(test_run))
+                    scaler.transform(self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('training'))
+                    scaler.transform(self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('validation'))
+                    scaler.transform(self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test'))
+                    scalers.update({test_run: scaler})
+                    self.plot_datasets(f'{ticker} normalized data subset - test run {test_run}',
+                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('training'),
+                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get(
+                                           'validation'),
+                                       self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test'),
+                                       f'{ticker_png_path}/test_run_{test_run}_phase_2.png')
+                self.__test_runs_scalers.update({ticker: scalers})
 
     def export_dataframes(self) -> None:
         for ticker in self.__tickers:
@@ -357,24 +350,21 @@ class DataManager:
                     data_child_path = f'{data_path}/test_run_{test_run}'
                     if not os.path.exists(data_child_path):
                         os.makedirs(data_child_path)
-                    self.__test_runs_dataframes.get(ticker).get(test_run).get('training').to_csv(
-                        (f'{data_child_path}/training.csv' if not self.__config.enx_data else
-                         f'{data_child_path}/training_{self.__config.enx_data_freq}.csv'))
-                    self.__test_runs_dataframes.get(ticker).get(test_run).get('validation').to_csv(
-                        (f'{data_child_path}/validation.csv' if not self.__config.enx_data else
-                         f'{data_child_path}/validation_{self.__config.enx_data_freq}.csv'))
-                    self.__test_runs_dataframes.get(ticker).get(test_run).get('test').to_csv(
-                        (f'{data_child_path}/test.csv' if not self.__config.enx_data else
-                         f'{data_child_path}/test_{self.__config.enx_data_freq}.csv'))
+                    self.__test_runs_dataframes.get(ticker).get(test_run).to_csv(
+                        f'{data_child_path}/adj_close.csv' if not self.__config.enx_data else
+                        f'{data_child_path}/trade_price_{self.__config.enx_data_freq}.csv')
                     self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('training').to_csv(
-                        (f'{data_child_path}/training_processed.csv' if not self.__config.enx_data else
-                         f'{data_child_path}/training_processed_{self.__config.enx_data_freq}.csv'))
+                        f'{data_child_path}/training.csv' if not self.__config.enx_data else
+                        f'{data_child_path}/training_{self.__config.enx_data_freq}.csv')
                     self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('validation').to_csv(
-                        (f'{data_child_path}/validation_processed.csv' if not self.__config.enx_data else
-                         f'{data_child_path}/validation_processed_{self.__config.enx_data_freq}.csv'))
+                        f'{data_child_path}/validation.csv' if not self.__config.enx_data else
+                        f'{data_child_path}/validation_{self.__config.enx_data_freq}.csv')
                     self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test').to_csv(
-                        (f'{data_child_path}/test_processed.csv' if not self.__config.enx_data else
-                         f'{data_child_path}/test_processed_{self.__config.enx_data_freq}.csv'))
+                        f'{data_child_path}/test.csv' if not self.__config.enx_data else
+                        f'{data_child_path}/test_{self.__config.enx_data_freq}.csv')
+                    dump(self.__test_runs_scalers.get(ticker).get(test_run),
+                         f'{data_child_path}/scaler.joblib' if not self.__config.enx_data else
+                         f'{data_child_path}/scaler_{self.__config.enx_data_freq}.joblib')
                 self.__cached_tickers.update({ticker: True})
 
     def init_datasets(self) -> None:
@@ -455,9 +445,10 @@ class DataManager:
 
     def reconstruct_and_export_predictions(self, ticker) -> None:
         for test_run in range(0, self.__config.tr_amt):
-            images_path = f'{self.images_path}/predictions/{ticker}'
-            if not os.path.exists(images_path):
-                os.makedirs(images_path)
+            scaler = self.__test_runs_scalers.get(ticker).get(test_run)
+            predictions_png_path = f'{self.images_path}/predictions/{ticker}'
+            if not os.path.exists(predictions_png_path):
+                os.makedirs(predictions_png_path)
             predictions = np.array(self.__test_runs_predictions.get(ticker).get(test_run)).reshape(-1, 1)
             predictions_mae = mean_absolute_error(
                 self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
@@ -468,12 +459,12 @@ class DataManager:
             predictions_mse = mean_squared_error(
                 self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
                 predictions)
-            predictions = np.exp(predictions)
+            scaler.inverse_transform(predictions)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
             self.export_predictions(ticker, test_run, predictions, predictions_mae, predictions_mape,
                                     predictions_mse, backtracked_predictions_aes)
-            self.plot_predictions(ticker, test_run, predictions, images_path)
+            self.plot_predictions(ticker, test_run, predictions, predictions_png_path)
 
     def export_predictions(self, ticker, test_run, predictions, predictions_mae, predictions_mape, predictions_mse,
                            backtracked_aes) -> None:
@@ -486,8 +477,8 @@ class DataManager:
             'mae': predictions_mae,
             'mape': predictions_mape,
             'mse': predictions_mse,
-        }, index=self.__test_runs_dataframes.get(ticker).get(test_run).get('test').index[self.__config.window_size:])
+        }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:])
         model_predictions.to_csv((f'{predictions_path}/test_run_{test_run}.csv' if not self.__config.enx_data
                                   else f'{predictions_path}/test_run_{test_run}_{self.__config.enx_data_freq}.csv'),
-                                 encoding='utf-8', sep=',', decimal='.',
+                                 encoding='utf-8', sep=',', decimal=',',
                                  index_label=('Date' if not self.__config.enx_data else 'Trade_timestamp'))

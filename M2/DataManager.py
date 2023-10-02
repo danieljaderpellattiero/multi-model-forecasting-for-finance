@@ -105,7 +105,7 @@ class DataManager:
 
     def plot_predictions(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
-        plt.title(f'{ticker} forecasting outcome (test run {test_run})')
+        plt.title(f'{ticker} forecasting outcome - test run {test_run}')
         plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run),
                  label='adj_close' if not self.__config.enx_data else 'trade_price',
                  color=self.data_plot_colors[0])
@@ -333,7 +333,7 @@ class DataManager:
                             test_run: dataframe_tmp.loc[f'{periods[0].to_date_string()}':
                                                         f'{periods[3].to_date_string()}']
                         })
-                        self.plot_time_series(f'{ticker} original data subset (test run {test_run})',
+                        self.plot_time_series(f'{ticker} original data subset - test run {test_run}',
                                               dataframes.get(test_run),
                                               f'{ticker_png_path}/test_run_{test_run}.png')
                     self.__test_runs_dataframes.update({ticker: dataframes})
@@ -354,7 +354,7 @@ class DataManager:
                     if os.path.exists(test_run_path) and os.path.exists(dataframe_path):
                         dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Trade_timestamp',
                                                                  parse_dates=True)})
-                        self.plot_time_series(f'{ticker} original data subset (test run {test_run})',
+                        self.plot_time_series(f'{ticker} original data subset - test run {test_run}',
                                               dataframes.get(test_run),
                                               f'{ticker_png_path}/test_run_{test_run}.png')
                     else:
@@ -593,5 +593,5 @@ class DataManager:
         }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:])
         model_predictions.to_csv((f'{predictions_path}/test_run_{test_run}.csv' if not self.__config.enx_data else
                                   f'{predictions_path}/test_run_{test_run}_{self.__config.enx_data_freq}.csv'),
-                                 encoding='utf-8', sep=',', decimal='.',
+                                 encoding='utf-8', sep=',', decimal=',',
                                  index_label='Date' if not self.__config.enx_data else 'Trade_timestamp')
