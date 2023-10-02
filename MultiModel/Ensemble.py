@@ -193,10 +193,5 @@ class Ensemble:
                     for metric in [mean_absolute_error, mean_absolute_percentage_error, mean_squared_error]:
                         metrics_dataframe[f'{method[0:2]}_{metric.__name__}'] = pd.Series(
                             metric(test_set_data, self.__ensembled_predictions.get(ticker).get(test_run)[method]))
-                for model in self.__models_names:
-                    for metric in [mean_absolute_error, mean_absolute_percentage_error, mean_squared_error]:
-                        metrics_dataframe[f'{model}_{metric.__name__}'] = pd.Series(
-                            metric(test_set_data, self.__models_predictions.get(ticker).get(test_run)[
-                                f'{model}_forecasted_values']))
                 metrics_dataframe.to_csv(f'{self.results_path}/{ticker}/test_run_{test_run}.csv', index=True,
                                          encoding='utf-8', sep=';', decimal=',')
