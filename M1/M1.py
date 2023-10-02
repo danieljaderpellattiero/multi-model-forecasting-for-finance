@@ -38,7 +38,7 @@ class M1:
             if not model.import_model():
                 self.generate_model(ticker, SAEs, model)
             self.generate_predictions(ticker, model)
-            self.__data_mgmt.reconstruct_and_export_results(ticker)
+            self.__data_mgmt.reconstruct_and_export_predictions(ticker)
 
     def generate_saes(self, ticker, SAEs) -> None:
         SAEs.define_model(self.__data_mgmt.tr_datasets.get(ticker).get(0).get('training').get('inputs').shape)

@@ -12,10 +12,14 @@ class M2:
         self.__data_mgmt = DataManager(self.__config, tickers)
 
     def run(self) -> None:
-        self.__data_mgmt.init_periods()
+        if not self.__config.enx_data:
+            self.__data_mgmt.init_periods()
         self.__data_mgmt.import_local_data()
         if not self.__data_mgmt.check_data_availability():
-            self.__data_mgmt.download_dataframes()
+            if not self.__config.enx_data:
+                self.__data_mgmt.download_dataframes()
+            else:
+                self.__data_mgmt.import_enx_dataframes()
             self.__data_mgmt.decompose_time_series()
             self.__data_mgmt.normalize_time_series_components()
             self.__data_mgmt.init_learning_params()
@@ -31,9 +35,11 @@ class M2:
             for test_run in range(0, self.__config.tr_amt):
                 components_predictions = {}
                 components_backtracked_predictions = {}
-                for index, component in enumerate(self.__data_mgmt.tr_components.get(ticker).get(test_run).keys()):
+                for component_index, component in enumerate(self.__data_mgmt.tr_components.get(ticker).get(test_run)
+                                                            .keys()):
                     model = LSTM(self.__config, ticker, test_run, component,
-                                 self.__data_mgmt.tr_learning_params.get(ticker).get(test_run).get('epochs')[index])
+                                 self.__data_mgmt.tr_learning_params.get(ticker).get(test_run).get('epochs')[
+                                     component_index])
                     if not model.import_model():
                         model.define_model(self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                            .get('training').get('inputs').shape)
@@ -50,12 +56,10 @@ class M2:
                                              .get('test').get('inputs'),
                                              self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                              .get('test').get('targets'))
-
                     components_predictions.update({
                         component: model.predict(self.__data_mgmt.tr_datasets.get(ticker).get(test_run).get(component)
                                                  .get('test').get('inputs'))
                     })
-
                     backtracked_predictions_tmp = self.__data_mgmt.init_backtrack_buffer(components_predictions
                                                                                          .get(component))
                     for ref_index, ref in enumerate(self.__data_mgmt.tr_bt_datasets.get(ticker).get(test_run)
@@ -78,4 +82,4 @@ class M2:
                 backtracked_predictions.update({test_run: components_backtracked_predictions})
             self.__data_mgmt.tr_predictions.update({ticker: predictions})
             self.__data_mgmt.tr_bt_predictions.update({ticker: backtracked_predictions})
-            self.__data_mgmt.reconstruct_and_export_results(ticker)
+            self.__data_mgmt.reconstruct_and_export_predictions(ticker)

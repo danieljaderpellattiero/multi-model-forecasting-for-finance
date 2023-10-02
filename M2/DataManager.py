@@ -20,6 +20,10 @@ matplotlib.use('Agg')
 
 
 class DataManager:
+    data_path = './data'
+    enx_data_path = './enx_data'
+    images_path = './images'
+    predictions_path = './predictions'
     data_plot_colors = ['royalblue', 'goldenrod', 'coral']
     model_predictions_plot_color = 'orchid'
 
@@ -92,16 +96,18 @@ class DataManager:
     def plot_time_series(self, title, time_series, path) -> None:
         plt.figure(figsize=(16, 9))
         plt.title(title)
-        plt.plot(time_series, label='adj_close', color=self.data_plot_colors[0])
+        plt.plot(time_series, label='adj_close' if not self.__config.enx_data else 'trade_price',
+                 color=self.data_plot_colors[0])
         plt.legend(loc='best')
         plt.grid(True)
         plt.savefig(f'{path}')
         plt.close()
 
-    def plot_results(self, ticker, test_run, predictions, path) -> None:
+    def plot_predictions(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
-        plt.title(f'{ticker} forecasting results (test run {test_run})')
-        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run), label='adj_close',
+        plt.title(f'{ticker} forecasting outcome (test run {test_run})')
+        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run),
+                 label='adj_close' if not self.__config.enx_data else 'trade_price',
                  color=self.data_plot_colors[0])
         plt.plot(pd.Series(
             predictions.flatten(), index=self.__test_runs_dataframes.get(ticker).get(test_run).index[
@@ -142,8 +148,8 @@ class DataManager:
             return None
         epochs: list[int] = [-1] * target_epochs
         delta = 5
-        values_lower_limits = [250, 200]
-        values_upper_limits = [300, 290]
+        values_lower_limits = [200, 150]
+        values_upper_limits = [300, 280]
         variable_delta = np.random.randint((values_lower_limits[0] - values_lower_limits[1]) // delta + 1) * delta
         epochs[0] = values_upper_limits[0]
         epochs[-1] = values_lower_limits[1] + variable_delta
@@ -221,39 +227,45 @@ class DataManager:
             self.__test_runs_periods.update({test_run: [period_begin, training_end, validation_end, period_end]})
 
     def import_local_data(self) -> None:
-        data_path = './data'
-        if os.path.exists(data_path):
+        if os.path.exists(self.data_path):
             imported_tickers = 0
             for ticker in self.__tickers:
-                ticker_path = f'{data_path}/{ticker}'
+                ticker_path = f'{self.data_path}/{ticker}'
                 if os.path.exists(ticker_path):
                     is_data_missing = False
                     dataframes = {}
                     time_series_components = {}
                     time_series_components_scalers = {}
                     time_series_components_learning_params = {}
-                    for test_run in self.__test_runs_periods.keys():
+                    for test_run in range(0, self.__config.tr_amt):
                         if not is_data_missing:
                             test_run_path = f'{ticker_path}/test_run_{test_run}'
-                            dataframe_path = f'{test_run_path}/adj_close.csv'
+                            dataframe_path = (f'{test_run_path}/adj_close.csv' if not self.__config.enx_data else
+                                              f'{test_run_path}/trade_price_{self.__config.enx_data_freq}.csv')
                             learning_params_path = f'{test_run_path}/learning_params.json'
                             if (os.path.exists(test_run_path) and os.path.exists(dataframe_path) and
                                     os.path.exists(learning_params_path)):
-                                dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Date',
-                                                                         parse_dates=True)})
+                                dataframes.update({test_run: pd.read_csv(dataframe_path, index_col=(
+                                    'Date' if not self.__config.enx_data else 'Trade_timestamp'), parse_dates=True)})
                                 with open(learning_params_path, 'r') as file:
                                     time_series_components_learning_params.update({test_run: json.load(file)})
                                 time_series_components_tmp = {}
                                 time_series_components_scalers_tmp = {}
                                 for component in time_series_components_learning_params.get(test_run).get('components'):
                                     if not is_data_missing:
-                                        component_path = f'{test_run_path}/{component}.csv'
-                                        component_scaler_path = f'{test_run_path}/{component}_scaler.joblib'
+                                        component_path = (
+                                            f'{test_run_path}/{component}.csv' if not self.__config.enx_data else
+                                            f'{test_run_path}/{component}_{self.__config.enx_data_freq}.csv')
+                                        component_scaler_path = (
+                                            f'{test_run_path}/{component}_scaler.joblib' if not self.__config.enx_data
+                                            else f'{test_run_path}/{component}_scaler_{self.__config.enx_data_freq}'
+                                                 f'.joblib')
                                         if os.path.exists(component_path) and os.path.exists(component_scaler_path):
                                             time_series_components_tmp.update({
-                                                component: pd.read_csv(component_path, index_col='Date',
-                                                                       parse_dates=True)
-                                            })
+                                                component: pd.read_csv(component_path,
+                                                                       index_col=('Date' if not self.__config.enx_data
+                                                                                  else 'Trade_timestamp'),
+                                                                       parse_dates=True)})
                                             time_series_components_scalers_tmp.update({
                                                 component: load(component_scaler_path)
                                             })
@@ -303,10 +315,9 @@ class DataManager:
         if self.check_internet_connection():
             for ticker in self.__tickers:
                 if not self.__cached_tickers.get(ticker):
-                    images_path = f'./images/data-preprocessing/{ticker}'
-                    if not os.path.exists(images_path):
-                        os.makedirs(images_path)
-
+                    ticker_png_path = f'{self.images_path}/data-preprocessing/{ticker}'
+                    if not os.path.exists(ticker_png_path):
+                        os.makedirs(ticker_png_path)
                     dataframe = finance.download(ticker,
                                                  self.__test_runs_periods.get(0)[0],
                                                  self.__test_runs_periods.get(self.__config.tr_amt - 1)[3].add(days=1),
@@ -314,9 +325,8 @@ class DataManager:
                     dataframe = dataframe[['Adj Close']]
                     dataframe = dataframe.dropna(subset=['Adj Close'], inplace=False)
                     dataframe = dataframe.rename(columns={'Adj Close': 'adj_close'}, inplace=False)
-
                     dataframes = {}
-                    for test_run in self.__test_runs_periods.keys():
+                    for test_run in range(0, self.__config.tr_amt):
                         dataframe_tmp = dataframe.copy(deep=True)
                         periods = self.__test_runs_periods.get(test_run)
                         dataframes.update({
@@ -325,17 +335,40 @@ class DataManager:
                         })
                         self.plot_time_series(f'{ticker} original data subset (test run {test_run})',
                                               dataframes.get(test_run),
-                                              f'{images_path}/test_run_{test_run}.png')
+                                              f'{ticker_png_path}/test_run_{test_run}.png')
                     self.__test_runs_dataframes.update({ticker: dataframes})
         else:
             print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
                   f'Cannot download dataframes without internet connection. {Style.RESET_ALL}')
 
+    def import_enx_dataframes(self) -> None:
+        for ticker in self.__tickers:
+            if not self.__cached_tickers.get(ticker):
+                ticker_png_path = f'{self.images_path}/data-preprocessing/{ticker}'
+                if not os.path.exists(ticker_png_path):
+                    os.makedirs(ticker_png_path)
+                dataframes = {}
+                for test_run in range(0, self.__config.tr_amt):
+                    test_run_path = f'{self.enx_data_path}/{ticker}/test_run_{test_run}'
+                    dataframe_path = f'{test_run_path}/trade_price_{self.__config.enx_data_freq}.csv'
+                    if os.path.exists(test_run_path) and os.path.exists(dataframe_path):
+                        dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Trade_timestamp',
+                                                                 parse_dates=True)})
+                        self.plot_time_series(f'{ticker} original data subset (test run {test_run})',
+                                              dataframes.get(test_run),
+                                              f'{ticker_png_path}/test_run_{test_run}.png')
+                    else:
+                        print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
+                              f'Euronext trading data not found for ticker {ticker} in test run {test_run}. '
+                              f'{Style.RESET_ALL}')
+                        exit(1)
+                self.__test_runs_dataframes.update({ticker: dataframes})
+
     def decompose_time_series(self) -> None:
         for ticker in self.__tickers:
             if not self.__cached_tickers.get(ticker):
                 time_series_components = {}
-                for test_run in self.__test_runs_periods.keys():
+                for test_run in range(0, self.__config.tr_amt):
                     time_series_components.update({
                         test_run: self.__decomposer.decompose(self.__test_runs_dataframes.get(ticker).get(test_run),
                                                               ticker, test_run)
@@ -347,12 +380,11 @@ class DataManager:
     def normalize_time_series_components(self) -> None:
         for ticker in self.__tickers:
             if not self.__cached_tickers.get(ticker):
-                images_path = f'./images/data-preprocessing/{ticker}'
-                if not os.path.exists(images_path):
-                    os.makedirs(images_path)
-
+                ticker_png_path = f'{self.images_path}/data-preprocessing/{ticker}'
+                if not os.path.exists(ticker_png_path):
+                    os.makedirs(ticker_png_path)
                 time_series_scalers = {}
-                for test_run in self.__test_runs_periods.keys():
+                for test_run in range(0, self.__config.tr_amt):
                     time_series_component_scalers = {}
                     for component in self.__test_runs_components.get(ticker).get(test_run).keys():
                         scaler = MinMaxScaler(copy=False, clip=False)
@@ -370,7 +402,7 @@ class DataManager:
         for ticker in self.__tickers:
             if not self.__cached_tickers.get(ticker):
                 learning_params = {}
-                for test_run in self.__test_runs_periods.keys():
+                for test_run in range(0, self.__config.tr_amt):
                     components_amount = len(self.__test_runs_components.get(ticker).get(test_run))
                     learning_params.update({
                         test_run: {
@@ -389,17 +421,19 @@ class DataManager:
     def export_time_series_components(self) -> None:
         for ticker in self.__tickers:
             if not self.__cached_tickers.get(ticker):
-                data_path = f'./data/{ticker}'
+                data_path = f'{self.data_path}/{ticker}'
                 if not os.path.exists(data_path):
                     os.makedirs(data_path)
-
                 time_series_dataframes = {}
-                for test_run in self.__test_runs_periods.keys():
+                for test_run in range(0, self.__config.tr_amt):
                     data_child_path = f'{data_path}/test_run_{test_run}'
                     if not os.path.exists(data_child_path):
                         os.makedirs(data_child_path)
 
-                    self.__test_runs_dataframes.get(ticker).get(test_run).to_csv(f'{data_child_path}/adj_close.csv')
+                    self.__test_runs_dataframes.get(ticker).get(test_run).to_csv(f'{data_child_path}/adj_close.csv' if
+                                                                                 not self.__config.enx_data else
+                                                                                 f'{data_child_path}/trade_price_'
+                                                                                 f'{self.__config.enx_data_freq}.csv')
                     with open(f'{data_child_path}/learning_params.json', 'w') as file:
                         json.dump(self.__test_runs_components_learning_params.get(ticker).get(test_run), file)
                     time_series_components_dataframes = {}
@@ -411,9 +445,12 @@ class DataManager:
                                 columns=[component]
                             )
                         })
-                        time_series_components_dataframes.get(component).to_csv(f'{data_child_path}/{component}.csv')
+                        time_series_components_dataframes.get(component).to_csv(
+                            f'{data_child_path}/{component}.csv' if not self.__config.enx_data else
+                            f'{data_child_path}/{component}_{self.__config.enx_data_freq}.csv')
                         dump(self.__test_runs_components_scalers.get(ticker).get(test_run).get(component),
-                             f'{data_child_path}/{component}_scaler.joblib')
+                             f'{data_child_path}/{component}_scaler.joblib' if not self.__config.enx_data else
+                             f'{data_child_path}/{component}_scaler_{self.__config.enx_data_freq}.joblib')
                     time_series_dataframes.update({test_run: time_series_components_dataframes})
                 self.__test_runs_components.update({ticker: time_series_dataframes})
                 self.__cached_tickers.update({ticker: True})
@@ -421,29 +458,36 @@ class DataManager:
     def init_datasets(self) -> None:
         for ticker in self.__tickers:
             datasets = {}
-            for test_run in self.__test_runs_periods.keys():
+            for test_run in range(0, self.__config.tr_amt):
                 periods = self.__test_runs_periods.get(test_run)
                 components_datasets = {}
                 for component_index, component in enumerate(self.__test_runs_components.get(ticker).get(test_run)
                                                             .keys()):
+                    training_split, validation_split = self.__config.get_test_run_splits(
+                        self.__test_runs_components.get(ticker).get(test_run).get(component).shape[0])
                     training_set_input, training_set_targets = self.df_to_timeseries(
-                        self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
-                            f'{periods[0].to_date_string()}':f'{periods[1].to_date_string()}'
-                        ],
+                        (self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
+                            f'{periods[0].to_date_string()}':f'{periods[1].to_date_string()}']
+                         if not self.__config.enx_data else
+                            self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[:training_split]),
                         self.__test_runs_components_learning_params.get(ticker).get(test_run).get('windows_size')
                         [component_index]
                     )
                     validation_set_input, validation_set_targets = self.df_to_timeseries(
-                        self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
-                            f'{periods[1].add(days=1).to_date_string()}':f'{periods[2].to_date_string()}'
-                        ],
+                        (self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
+                            f'{periods[1].add(days=1).to_date_string()}':f'{periods[2].to_date_string()}']
+                         if not self.__config.enx_data else
+                            self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[
+                            training_split:validation_split]),
                         self.__test_runs_components_learning_params.get(ticker).get(test_run).get('windows_size')
                         [component_index]
                     )
                     test_set_input, test_set_targets = self.df_to_timeseries(
-                        self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
-                            f'{periods[2].add(days=1).to_date_string()}':f'{periods[3].to_date_string()}'
-                        ],
+                        (self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
+                            f'{periods[2].add(days=1).to_date_string()}':f'{periods[3].to_date_string()}']
+                         if not self.__config.enx_data else
+                            self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[
+                                validation_split:]),
                         self.__test_runs_components_learning_params.get(ticker).get(test_run).get('windows_size')
                         [component_index]
                     )
@@ -469,7 +513,7 @@ class DataManager:
     def init_alternative_dataset(self) -> None:
         for ticker in self.__tickers:
             datasets = {}
-            for test_run in self.__test_runs_periods.keys():
+            for test_run in range(0, self.__config.tr_amt):
                 components_datasets = {}
                 for component in self.__test_runs_datasets.get(ticker).get(test_run).keys():
                     training_sequences = (self.__test_runs_datasets.get(ticker).get(test_run).get(component)
@@ -487,36 +531,42 @@ class DataManager:
                 datasets.update({test_run: components_datasets})
             self.__test_runs_backtracked_datasets.update({ticker: datasets})
 
-    def reconstruct_and_export_results(self, ticker) -> None:
-        for test_run in self.__test_runs_predictions.get(ticker).keys():
-            images_path = f'./images/predictions/{ticker}'
-            if not os.path.exists(images_path):
-                os.makedirs(images_path)
-
+    def reconstruct_and_export_predictions(self, ticker) -> None:
+        for test_run in range(0, self.__config.tr_amt):
+            predictions_png_path = f'{self.images_path}/predictions/{ticker}'
+            if not os.path.exists(predictions_png_path):
+                os.makedirs(predictions_png_path)
             predictions_metrics = self.calculate_metrics(ticker, test_run, self.__test_runs_predictions.get(ticker)
                                                          .get(test_run))
-            reconstructed_predictions = self.reconstruct_results(ticker, test_run,
-                                                                 self.__test_runs_predictions.get(ticker).get(test_run))
+            reconstructed_predictions = self.reconstruct_predictions(ticker, test_run,
+                                                                     self.__test_runs_predictions.get(ticker)
+                                                                     .get(test_run))
+            reconstructed_predictions = self.adjust_predictions_offsets(ticker, test_run, reconstructed_predictions)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
-            self.export_results(ticker, test_run, reconstructed_predictions, predictions_metrics,
-                                backtracked_predictions_aes)
-            self.plot_results(ticker, test_run, reconstructed_predictions, images_path)
+            self.export_predictions(ticker, test_run, reconstructed_predictions, predictions_metrics,
+                                    backtracked_predictions_aes)
+            self.plot_predictions(ticker, test_run, reconstructed_predictions, predictions_png_path)
 
-    def reconstruct_results(self, ticker, test_run, components_predictions) -> np.ndarray:
-        results = [0] * len(components_predictions.get('residue'))
+    def reconstruct_predictions(self, ticker, test_run, components_predictions) -> np.ndarray:
+        predictions = [0] * len(components_predictions.get('residue'))
         for component in components_predictions.keys():
             component_scaler = self.__test_runs_components_scalers.get(ticker).get(test_run).get(component)
             component_scaler.inverse_transform(components_predictions.get(component))
             components_predictions.update({
                 component: np.array(components_predictions.get(component)).flatten()
             })
-        for index in range(len(results)):
-            results_index = len(results) - index - 1
+        for index in range(len(predictions)):
+            predictions_index = len(predictions) - index - 1
             for component in components_predictions.keys():
                 component_index = len(components_predictions.get(component)) - index - 1
-                results[results_index] += components_predictions.get(component)[component_index]
-        return np.array(results).reshape(-1, 1)
+                predictions[predictions_index] += components_predictions.get(component)[component_index]
+        return np.array(predictions).reshape(-1, 1)
+
+    def adjust_predictions_offsets(self, ticker, test_run, predictions) -> np.ndarray:
+        offset = self.__test_runs_dataframes.get(ticker).get(test_run).iloc[-predictions.shape[0]][
+            ('adj_close' if not self.__config.enx_data else 'trade_price')] - predictions[0]
+        return predictions + offset if offset > 0 else predictions - offset
 
     def calculate_metrics(self, ticker, test_run, components_predictions) -> dict:
         metrics = {}
@@ -527,24 +577,21 @@ class DataManager:
                     self.__test_runs_datasets.get(ticker).get(test_run).get(component).get('test').get('targets'),
                     components_predictions.get(component)
                 )
-            if metric == mean_absolute_percentage_error:
-                partial_metrics = np.delete(partial_metrics, partial_metrics.shape[0] - 1)
             metrics.update({metric.__name__: np.mean(partial_metrics)})
-        metrics.update({'root_mean_squared_error': np.sqrt(metrics.get('mean_squared_error'))})
         return metrics
 
-    def export_results(self, ticker, test_run, predictions, predictions_metrics, backtrack_aes) -> None:
-        data_path = f'./predictions/{ticker}'
-        if not os.path.exists(data_path):
-            os.makedirs(data_path)
-
-        model_results = pd.DataFrame({
+    def export_predictions(self, ticker, test_run, predictions, predictions_metrics, backtrack_aes) -> None:
+        predictions_path = f'{self.predictions_path}/{ticker}'
+        if not os.path.exists(predictions_path):
+            os.makedirs(predictions_path)
+        model_predictions = pd.DataFrame({
             'forecasted_values': predictions.flatten(),
             'backtracked_values_aes': backtrack_aes.flatten(),
             'mae': predictions_metrics.get('mean_absolute_error'),
             'mape': predictions_metrics.get('mean_absolute_percentage_error'),
             'mse': predictions_metrics.get('mean_squared_error'),
-            'rmse': predictions_metrics.get('root_mean_squared_error')
         }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:])
-        model_results.to_csv(f'{data_path}/test_run_{test_run}.csv', encoding='utf-8',
-                             sep=',', decimal='.', index_label='Date')
+        model_predictions.to_csv((f'{predictions_path}/test_run_{test_run}.csv' if not self.__config.enx_data else
+                                  f'{predictions_path}/test_run_{test_run}_{self.__config.enx_data_freq}.csv'),
+                                 encoding='utf-8', sep=',', decimal='.',
+                                 index_label='Date' if not self.__config.enx_data else 'Trade_timestamp')

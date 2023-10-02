@@ -26,7 +26,7 @@ class SAEsLSTM:
         self.__recurrent_dropout = 0.2
         self.__optimizers = [Adam(learning_rate=1e-3), Adam(learning_rate=1e-4)]
         self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
-        self.__model_checkpoints = ModelCheckpoint(f'./models/{self.__ticker}/SAEs-LSTM', monitor='val_loss',
+        self.__model_checkpoints = ModelCheckpoint(f'{self.models_path}/{self.__ticker}/SAEs-LSTM', monitor='val_loss',
                                                    verbose=self.__config.verbosity, save_weights_only=False,
                                                    save_best_only=True, mode='auto')
 

@@ -95,9 +95,9 @@ class DataManager:
         plt.savefig(f'{path}')
         plt.close()
 
-    def plot_results(self, ticker, test_run, predictions, path) -> None:
+    def plot_predictions(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
-        plt.title(f'{ticker} forecasting results (test run {test_run})')
+        plt.title(f'{ticker} forecasting outcome (test run {test_run})')
         plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run),
                  label='adj_close' if not self.__config.enx_data else 'trade_price',
                  color=self.data_plot_colors[0])
@@ -183,7 +183,8 @@ class DataManager:
                                                    f'{test_run_path}/validation_{self.__config.enx_data_freq}.csv')
                             test_set_path = (f'{test_run_path}/test.csv' if not self.__config.enx_data else
                                              f'{test_run_path}/test_{self.__config.enx_data_freq}.csv')
-                            scaler_path = f'{test_run_path}/scaler.joblib'
+                            scaler_path = (f'{test_run_path}/scaler.joblib' if not self.__config.enx_data else
+                                           f'{test_run_path}/scaler_{self.__config.enx_data_freq}.joblib')
                             if (os.path.exists(test_run_path) and os.path.exists(dataframe_path) and
                                     os.path.exists(training_set_path) and os.path.exists(validation_set_path) and
                                     os.path.exists(test_set_path) and os.path.exists(scaler_path)):
@@ -234,47 +235,6 @@ class DataManager:
         else:
             return False
 
-    def import_enx_dataframes(self) -> None:
-        for ticker in self.__tickers:
-            if not self.__cached_tickers.get(ticker):
-                ticker_png_path = f'{self.images_path}/data-preprocessing/{ticker}'
-                if not os.path.exists(ticker_png_path):
-                    os.makedirs(ticker_png_path)
-                dataframes = {}
-                processed_dataframes = {}
-                for test_run in range(0, self.__config.tr_amt):
-                    test_run_path = f'{self.enx_data_path}/{ticker}/test_run_{test_run}'
-                    dataframe_path = f'{test_run_path}/trade_price_{self.__config.enx_data_freq}.csv'
-                    training_set_path = f'{test_run_path}/training_{self.__config.enx_data_freq}.csv'
-                    validation_set_path = f'{test_run_path}/validation_{self.__config.enx_data_freq}.csv'
-                    test_set_path = f'{test_run_path}/test_{self.__config.enx_data_freq}.csv'
-                    if (os.path.exists(test_run_path) and os.path.exists(dataframe_path) and
-                            os.path.exists(training_set_path) and os.path.exists(validation_set_path) and
-                            os.path.exists(test_set_path)):
-                        dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Trade_timestamp',
-                                                                 parse_dates=True)})
-                        processed_dataframes.update({
-                            test_run: {
-                                'training': pd.read_csv(training_set_path, index_col='Trade_timestamp',
-                                                        parse_dates=True),
-                                'validation': pd.read_csv(validation_set_path, index_col='Trade_timestamp',
-                                                          parse_dates=True),
-                                'test': pd.read_csv(test_set_path, index_col='Trade_timestamp', parse_dates=True)
-                            }
-                        })
-                        self.plot_dataset(f'{ticker} original data subset (test run {test_run})',
-                                          processed_dataframes.get(test_run).get('training'),
-                                          processed_dataframes.get(test_run).get('validation'),
-                                          processed_dataframes.get(test_run).get('test'),
-                                          f'{ticker_png_path}/test_run_{test_run}_phase_1.png')
-                    else:
-                        print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
-                              f'Euronext trading data not found for ticker {ticker} in test run {test_run}. '
-                              f'{Style.RESET_ALL}')
-                        exit(1)
-                self.__test_runs_dataframes.update({ticker: dataframes})
-                self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
-
     def download_dataframes(self) -> None:
         if self.check_internet_connection():
             for ticker in self.__tickers:
@@ -318,6 +278,47 @@ class DataManager:
         else:
             print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
                   f'Cannot download dataframes without internet connection. {Style.RESET_ALL}')
+
+    def import_enx_dataframes(self) -> None:
+        for ticker in self.__tickers:
+            if not self.__cached_tickers.get(ticker):
+                ticker_png_path = f'{self.images_path}/data-preprocessing/{ticker}'
+                if not os.path.exists(ticker_png_path):
+                    os.makedirs(ticker_png_path)
+                dataframes = {}
+                processed_dataframes = {}
+                for test_run in range(0, self.__config.tr_amt):
+                    test_run_path = f'{self.enx_data_path}/{ticker}/test_run_{test_run}'
+                    dataframe_path = f'{test_run_path}/trade_price_{self.__config.enx_data_freq}.csv'
+                    training_set_path = f'{test_run_path}/training_{self.__config.enx_data_freq}.csv'
+                    validation_set_path = f'{test_run_path}/validation_{self.__config.enx_data_freq}.csv'
+                    test_set_path = f'{test_run_path}/test_{self.__config.enx_data_freq}.csv'
+                    if (os.path.exists(test_run_path) and os.path.exists(dataframe_path) and
+                            os.path.exists(training_set_path) and os.path.exists(validation_set_path) and
+                            os.path.exists(test_set_path)):
+                        dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Trade_timestamp',
+                                                                 parse_dates=True)})
+                        processed_dataframes.update({
+                            test_run: {
+                                'training': pd.read_csv(training_set_path, index_col='Trade_timestamp',
+                                                        parse_dates=True),
+                                'validation': pd.read_csv(validation_set_path, index_col='Trade_timestamp',
+                                                          parse_dates=True),
+                                'test': pd.read_csv(test_set_path, index_col='Trade_timestamp', parse_dates=True)
+                            }
+                        })
+                        self.plot_dataset(f'{ticker} original data subset (test run {test_run})',
+                                          processed_dataframes.get(test_run).get('training'),
+                                          processed_dataframes.get(test_run).get('validation'),
+                                          processed_dataframes.get(test_run).get('test'),
+                                          f'{ticker_png_path}/test_run_{test_run}_phase_1.png')
+                    else:
+                        print(f'{Fore.LIGHTRED_EX} [ {self.__config.uuid} ] '
+                              f'Euronext trading data not found for ticker {ticker} in test run {test_run}. '
+                              f'{Style.RESET_ALL}')
+                        exit(1)
+                self.__test_runs_dataframes.update({ticker: dataframes})
+                self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
 
     def normalize_dataframes(self) -> None:
         for ticker in self.__tickers:
@@ -389,7 +390,9 @@ class DataManager:
                     self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test').to_csv(
                         f'{data_child_path}/test.csv' if not self.__config.enx_data else
                         f'{data_child_path}/test_{self.__config.enx_data_freq}.csv')
-                    dump(self.__test_runs_scalers.get(ticker).get(test_run), f'{data_child_path}/scaler.joblib')
+                    dump(self.__test_runs_scalers.get(ticker).get(test_run),
+                         f'{data_child_path}/scaler.joblib' if not self.__config.enx_data else
+                         f'{data_child_path}/scaler_{self.__config.enx_data_freq}.joblib')
                 self.__cached_tickers.update({ticker: True})
 
     def init_datasets(self) -> None:
@@ -468,12 +471,12 @@ class DataManager:
                 dataset.update({test_run: closest_sequences_refs})
             self.__test_runs_backtracked_datasets.update({ticker: dataset})
 
-    def reconstruct_and_export_results(self, ticker) -> None:
+    def reconstruct_and_export_predictions(self, ticker) -> None:
         for test_run in range(0, self.__config.tr_amt):
             scaler = self.__test_runs_scalers.get(ticker).get(test_run)
-            results_png_path = f'{self.images_path}/predictions/{ticker}'
-            if not os.path.exists(results_png_path):
-                os.makedirs(results_png_path)
+            predictions_png_path = f'{self.images_path}/predictions/{ticker}'
+            if not os.path.exists(predictions_png_path):
+                os.makedirs(predictions_png_path)
             predictions = np.array(self.__test_runs_predictions.get(ticker).get(test_run)).reshape(-1, 1)
             predictions_mae = mean_absolute_error(
                 self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
@@ -487,16 +490,16 @@ class DataManager:
             scaler.inverse_transform(predictions)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
-            self.export_results(ticker, test_run, predictions, predictions_mae, predictions_mape,
-                                predictions_mse, backtracked_predictions_aes)
-            self.plot_results(ticker, test_run, predictions, results_png_path)
+            self.export_predictions(ticker, test_run, predictions, predictions_mae, predictions_mape,
+                                    predictions_mse, backtracked_predictions_aes)
+            self.plot_predictions(ticker, test_run, predictions, predictions_png_path)
 
-    def export_results(self, ticker, test_run, predictions, predictions_mae, predictions_mape, predictions_mse,
-                       backtracked_aes) -> None:
+    def export_predictions(self, ticker, test_run, predictions, predictions_mae, predictions_mape, predictions_mse,
+                           backtracked_aes) -> None:
         predictions_path = f'{self.predictions_path}/{ticker}'
         if not os.path.exists(predictions_path):
             os.makedirs(predictions_path)
-        model_results = pd.DataFrame({
+        model_predictions = pd.DataFrame({
             'forecasted_values': predictions.flatten(),
             'backtracked_values_aes': backtracked_aes.flatten(),
             'mae': predictions_mae,
@@ -504,7 +507,7 @@ class DataManager:
             'mse': predictions_mse,
         }, index=self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test')
                  .index[-predictions.shape[0]:])
-        model_results.to_csv((f'{predictions_path}/test_run_{test_run}.csv' if not self.__config.enx_data else
-                              f'{predictions_path}/test_run_{test_run}_{self.__config.enx_data_freq}.csv'),
-                             encoding='utf-8', sep=',', decimal='.',
-                             index_label='Date' if not self.__config.enx_data else 'Trade_timestamp')
+        model_predictions.to_csv((f'{predictions_path}/test_run_{test_run}.csv' if not self.__config.enx_data else
+                                  f'{predictions_path}/test_run_{test_run}_{self.__config.enx_data_freq}.csv'),
+                                 encoding='utf-8', sep=',', decimal='.',
+                                 index_label='Date' if not self.__config.enx_data else 'Trade_timestamp')

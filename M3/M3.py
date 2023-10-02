@@ -12,10 +12,14 @@ class M3:
         self.__data_mgmt = DataManager(self.__config, tickers)
 
     def run(self) -> None:
-        self.__data_mgmt.init_periods()
+        if not self.__config.enx_data:
+            self.__data_mgmt.init_periods()
         self.__data_mgmt.import_local_data()
         if not self.__data_mgmt.check_data_availability():
-            self.__data_mgmt.download_dataframes()
+            if not self.__config.enx_data:
+                self.__data_mgmt.download_dataframes()
+            else:
+                self.__data_mgmt.import_enx_dataframes()
             self.__data_mgmt.homogenize_dataframes()
             self.__data_mgmt.export_dataframes()
             if not self.__data_mgmt.check_data_availability():
@@ -29,7 +33,7 @@ class M3:
             if not model.import_model():
                 self.generate_cnn_lstm(ticker, model)
             self.generate_predictions(ticker, model)
-            self.__data_mgmt.reconstruct_and_export_results(ticker)
+            self.__data_mgmt.reconstruct_and_export_predictions(ticker)
 
     def generate_cnn_lstm(self, ticker, model) -> None:
         model.define_model(self.__data_mgmt.tr_btch_datasets.get(ticker).get(0).get('training').element_spec[0]

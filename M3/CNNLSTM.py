@@ -13,6 +13,7 @@ from keras.layers import Conv1D, MaxPooling1D, LSTM, Dense
 
 
 class CNNLSTM:
+    models_path = './models'
 
     def __init__(self, ticker, parent_model_config) -> None:
         self.__model = None
@@ -23,12 +24,12 @@ class CNNLSTM:
         self.__model_metric = MetricMAE()
         self.__optimizer = Adam(learning_rate=1e-3)
         self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
-        self.__model_checkpoints = ModelCheckpoint(f'./models/{self.__ticker}/CNN-LSTM', monitor='val_loss',
+        self.__model_checkpoints = ModelCheckpoint(f'{self.models_path}/{self.__ticker}/CNN-LSTM', monitor='val_loss',
                                                    verbose=self.__config.verbosity, save_weights_only=False,
                                                    save_best_only=True, mode='auto')
 
     def import_model(self) -> bool:
-        cnn_lstm_path = f'./models/{self.__ticker}/CNN-LSTM'
+        cnn_lstm_path = f'{self.models_path}/{self.__ticker}/CNN-LSTM'
         if os.path.exists(cnn_lstm_path):
             self.__model = keras.models.load_model(cnn_lstm_path, compile=False, safe_mode=True)
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} ] Local CNN-LSTM found. '
@@ -67,7 +68,7 @@ class CNNLSTM:
     def train_model(self, training_dataset, validation_dataset, test_run, shuffled=True) -> None:
         if self.__model is not None:
             print(f'{Fore.LIGHTGREEN_EX} [ {self.__config.uuid} | {self.__ticker} | Test run {test_run} ] '
-                  f'Training CNN-LSTM {Style.RESET_ALL}')
+                  f'Training CNN-LSTM ... {Style.RESET_ALL}')
             self.__model.fit(training_dataset, epochs=self.__config.epochs, shuffle=shuffled,
                              validation_data=validation_dataset,
                              callbacks=[self.__early_stopper, self.__model_checkpoints],
