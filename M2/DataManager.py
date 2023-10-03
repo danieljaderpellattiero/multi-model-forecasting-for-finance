@@ -147,15 +147,17 @@ class DataManager:
         if target_epochs < 2:
             return None
         epochs: list[int] = [-1] * target_epochs
-        delta = 5
-        values_lower_limits = [200, 150]
+        high_delta = 10
+        low_delta = 5
+        values_lower_limits = [80, 60]
         values_upper_limits = [300, 280]
-        variable_delta = np.random.randint((values_lower_limits[0] - values_lower_limits[1]) // delta + 1) * delta
+        variable_delta = np.random.randint(
+            (values_lower_limits[0] - values_lower_limits[1]) // low_delta + 1) * low_delta
         epochs[0] = values_upper_limits[0]
         epochs[-1] = values_lower_limits[1] + variable_delta
         if len(epochs) > 2:
             remaining_epochs = len(epochs[1:-1])
-            epochs_pool = np.arange(values_upper_limits[1], values_lower_limits[0] - delta, -delta).tolist()
+            epochs_pool = np.arange(values_upper_limits[1], values_lower_limits[0] - high_delta, -high_delta).tolist()
             if remaining_epochs > len(epochs_pool):
                 return None
             filler_epoch_index = 1
@@ -541,7 +543,6 @@ class DataManager:
             reconstructed_predictions = self.reconstruct_predictions(ticker, test_run,
                                                                      self.__test_runs_predictions.get(ticker)
                                                                      .get(test_run))
-            reconstructed_predictions = self.adjust_predictions_offsets(ticker, test_run, reconstructed_predictions)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
             self.export_predictions(ticker, test_run, reconstructed_predictions, predictions_metrics,
@@ -562,11 +563,6 @@ class DataManager:
                 component_index = len(components_predictions.get(component)) - index - 1
                 predictions[predictions_index] += components_predictions.get(component)[component_index]
         return np.array(predictions).reshape(-1, 1)
-
-    def adjust_predictions_offsets(self, ticker, test_run, predictions) -> np.ndarray:
-        offset = self.__test_runs_dataframes.get(ticker).get(test_run).iloc[-predictions.shape[0]][
-            ('adj_close' if not self.__config.enx_data else 'trade_price')] - predictions[0]
-        return predictions + offset if offset > 0 else predictions - offset
 
     def calculate_metrics(self, ticker, test_run, components_predictions) -> dict:
         metrics = {}

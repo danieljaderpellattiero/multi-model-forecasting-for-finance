@@ -5,7 +5,7 @@ from tensorflow import keras
 from keras import Input, Model
 from colorama import Fore, Style
 from keras.optimizers import Adam
-from keras.activations import relu, tanh
+from keras.activations import relu, tanh, sigmoid
 from keras.losses import MeanSquaredError as LossMSE
 from keras.metrics import MeanAbsoluteError as MetricMAE
 from keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -21,6 +21,7 @@ class CNNLSTM:
         self.__config = parent_model_config
         self.__loss_function = LossMSE()
         self.__activation_functions = [relu, tanh]
+        self.__recurrent_activation = sigmoid
         self.__model_metric = MetricMAE()
         self.__optimizer = Adam(learning_rate=1e-3)
         self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
@@ -42,10 +43,13 @@ class CNNLSTM:
 
     def define_model(self, dataset_shape) -> None:
         data_source = Input(shape=(dataset_shape[1], 1), name='source')
-        cnn_l1 = Conv1D(64, kernel_size=2, activation=self.__activation_functions[0], name='cnn_1')(data_source)
-        cnn_l2 = Conv1D(128, kernel_size=2, activation=self.__activation_functions[0], name='cnn_2')(cnn_l1)
+        cnn_l1 = Conv1D(64, kernel_size=2, strides=1, activation=self.__activation_functions[0],
+                        name='cnn_1')(data_source)
+        cnn_l2 = Conv1D(128, kernel_size=2, strides=1, activation=self.__activation_functions[0],
+                        name='cnn_2')(cnn_l1)
         cnn_maxp = MaxPooling1D(pool_size=2, name='cnn_max_pooling')(cnn_l2)
-        lstm_l1 = LSTM(200, activation=self.__activation_functions[1], return_sequences=False, name='lstm_1')(cnn_maxp)
+        lstm_l1 = LSTM(200, activation=self.__activation_functions[1], return_sequences=False,
+                       recurrent_activation=sigmoid, name='lstm_1')(cnn_maxp)
         dense_l1 = Dense(32, activation=None, name='dense_1')(lstm_l1)
         dense_l2 = Dense(1, activation=None, name='dense_2')(dense_l1)
         self.__model = Model(data_source, dense_l2, name='CNN-LSTM')
