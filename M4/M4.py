@@ -1,13 +1,13 @@
 from Config import Config
-from CNNLSTM import CNNLSTM
 from DataManager import DataManager
+from MPCNNBDLSTM import MPCNNBDLSTM
 
 
-class M3:
+class M4:
 
     def __init__(self, config_params, tickers) -> None:
-        self.__uuid = 'M3'
-        self.__alias = 'CNN-LSTM'
+        self.__uuid = 'M4'
+        self.__alias = 'MPCNNBDLSTM'
         self.__config = Config(self.__uuid, config_params)
         self.__data_mgmt = DataManager(self.__config, tickers)
 
@@ -29,7 +29,7 @@ class M3:
         self.__data_mgmt.init_alternative_dataset()
 
         for ticker in self.__data_mgmt.tickers:
-            model = CNNLSTM(ticker, self.__config)
+            model = MPCNNBDLSTM(ticker, self.__config)
             if not model.import_model():
                 self.generate_model(ticker, model)
             self.generate_predictions(ticker, model)

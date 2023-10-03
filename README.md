@@ -34,6 +34,12 @@ Finally, a software that can effectively and efficiently combine these algorithm
 
 - [A CNN–LSTM model for gold price time-series forecasting](https://link.springer.com/article/10.1007/s00521-020-04867-x)
 
+### MP-CNN-BDLSTM ( model №4 )
+
+#### Paper
+
+- [Novel_Deep_Learning_Model_with_CNN_and_Bi-Directional_LSTM_for_Improved_Stock_Market_Index_Prediction](https://ieeexplore.ieee.org/document/8666592)
+
 ### How to use them
 
 1. Open the project folder using a Python IDE. ( _preferably [PyCharm](https://www.jetbrains.com/pycharm/)_ )
