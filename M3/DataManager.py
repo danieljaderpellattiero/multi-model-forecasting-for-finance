@@ -156,8 +156,8 @@ class DataManager:
             if test_run != 0:
                 period_begin = period_begin.add(months=self.__config.tr_step_size)
             training_end = period_begin.add(years=self.__config.tr_delay_y)
-            validation_end = training_end.add(months=self.__config.tr_delay_m)
-            period_end = validation_end.add(months=self.__config.tr_delay_m)
+            validation_end = training_end.add(months=self.__config.tr_delay_m[0])
+            period_end = validation_end.add(months=self.__config.tr_delay_m[1])
             self.__test_runs_periods.update({test_run: [period_begin, training_end, validation_end, period_end]})
 
     def import_local_data(self) -> None:

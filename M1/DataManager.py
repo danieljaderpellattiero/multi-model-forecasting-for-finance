@@ -98,7 +98,7 @@ class DataManager:
     def plot_predictions(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
         plt.title(f'{ticker} forecasting outcome - test run {test_run}')
-        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run),
+        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run).tail(predictions.shape[0]),
                  label='adj_close' if not self.__config.enx_data else 'trade_price',
                  color=self.data_plot_colors[0])
         plt.plot(pd.Series(
@@ -158,8 +158,8 @@ class DataManager:
             if test_run != 0:
                 period_begin = period_begin.add(months=self.__config.tr_step_size)
             training_end = period_begin.add(years=self.__config.tr_delay_y)
-            validation_end = training_end.add(months=self.__config.tr_delay_m)
-            period_end = validation_end.add(months=self.__config.tr_delay_m)
+            validation_end = training_end.add(months=self.__config.tr_delay_m[0])
+            period_end = validation_end.add(months=self.__config.tr_delay_m[1])
             self.__test_runs_periods.update({test_run: [period_begin, training_end, validation_end, period_end]})
 
     def import_local_data(self) -> None:
@@ -272,7 +272,7 @@ class DataManager:
                                           processed_dataframes.get(test_run).get('training'),
                                           processed_dataframes.get(test_run).get('validation'),
                                           processed_dataframes.get(test_run).get('test'),
-                                          f'{self.images_path}/test_run_{test_run}_phase_1.png')
+                                          f'{ticker_png_path}/test_run_{test_run}_phase_1.png')
                     self.__test_runs_dataframes.update({ticker: dataframes})
                     self.__test_runs_processed_dataframes.update({ticker: processed_dataframes})
         else:

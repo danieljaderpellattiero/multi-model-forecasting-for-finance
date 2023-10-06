@@ -7,7 +7,7 @@ class Config:
         self.__period_begin = params[2]
         self.__test_runs_amount = params[3]
         self.__test_runs_delay_year = params[4]
-        self.__test_runs_delay_month = params[5]
+        self.__test_runs_delay_months = params[5]
         self.__test_runs_step_size = params[6]
         self.__epochs = params[7]
         self.__batch_size = params[8]
@@ -40,7 +40,7 @@ class Config:
 
     @property
     def tr_delay_m(self) -> int:
-        return self.__test_runs_delay_month
+        return self.__test_runs_delay_months
 
     @property
     def tr_step_size(self) -> int:

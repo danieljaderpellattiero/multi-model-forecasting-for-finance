@@ -6,7 +6,7 @@ from keras import Input, Model
 from colorama import Fore, Style
 from keras.optimizers import Adam
 from keras.layers import LSTM, Dense
-from keras.activations import tanh, sigmoid
+from keras.activations import tanh
 from keras.losses import MeanSquaredError as LossMSE
 from keras.metrics import MeanSquaredError as MetricMSE
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
@@ -25,7 +25,6 @@ class CMDNLSTM:
         self.__model_metric = MetricMSE()
         self.__loss_function = LossMSE()
         self.__activation = tanh
-        self.__recurrent_activation = sigmoid
         self.__dropout = 0.2
         self.__recurrent_dropout = 0.2
         self.__optimizer = Adam(learning_rate=1e-3)
@@ -49,12 +48,9 @@ class CMDNLSTM:
 
     def define_model(self, dataset_shape) -> None:
         data_source = Input(shape=(dataset_shape[1], 1), name='source')
-        lstm_l1 = LSTM(128, activation=self.__activation, return_sequences=True,
-                       recurrent_activation=self.__recurrent_activation, name='lstm_1')(data_source)
-        lstm_l2 = LSTM(64, activation=self.__activation, return_sequences=True,
-                       recurrent_activation=self.__recurrent_activation, name='lstm_2')(lstm_l1)
-        lstm_l3 = LSTM(32, activation=self.__activation, return_sequences=False,
-                       recurrent_activation=self.__recurrent_activation, name='lstm_3')(lstm_l2)
+        lstm_l1 = LSTM(128, activation=self.__activation, return_sequences=True, name='lstm_1')(data_source)
+        lstm_l2 = LSTM(64, activation=self.__activation, return_sequences=True, name='lstm_2')(lstm_l1)
+        lstm_l3 = LSTM(32, activation=self.__activation, return_sequences=False, name='lstm_3')(lstm_l2)
         dense_l1 = Dense(16, activation=None, name='dense_1')(lstm_l3)
         dense_l2 = Dense(1, activation=None, name='dense_2')(dense_l1)
         self.__model = Model(data_source, dense_l2, name='LSTM')
