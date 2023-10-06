@@ -5,22 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f0351019-eef3-47a2-ba25-b00a38b40a81" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../M1/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M1/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/Config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../M1/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M1/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M1/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMDNLSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/CMDNLSTM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/Config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/Config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M4/Config.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M4/Config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M4/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M4/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M4/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M4/Main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,15 +26,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/multi-model-forecasting-for-finance/M3&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "D:/multi-model-forecasting-for-finance/M3",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="Main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="M2" />

@@ -103,8 +103,7 @@ class DataManager:
                  color=self.data_plot_colors[0])
         plt.plot(pd.Series(
             predictions.flatten(),
-            index=self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test').index[
-                  -predictions.shape[0]:]
+            index=self.__test_runs_dataframes.get(ticker).get(test_run).tail(predictions.shape[0]).index
         ), label='model_predictions', color=self.model_predictions_plot_color)
         plt.legend(loc='best')
         plt.grid(True)

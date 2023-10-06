@@ -106,16 +106,33 @@ class DataManager:
     def plot_predictions(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
         plt.title(f'{ticker} forecasting outcome - test run {test_run}')
-        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run),
+        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run).tail(predictions.shape[0]),
                  label='adj_close' if not self.__config.enx_data else 'trade_price',
                  color=self.data_plot_colors[0])
         plt.plot(pd.Series(
-            predictions.flatten(), index=self.__test_runs_dataframes.get(ticker).get(test_run).index[
-                                         -predictions.shape[0]:]
+            predictions.flatten(), self.__test_runs_dataframes.get(ticker).get(test_run).tail(
+                predictions.shape[0]).index
         ), label='model_predictions', color=self.model_predictions_plot_color)
         plt.legend(loc='best')
         plt.grid(True)
         plt.savefig(f'{path}/test_run_{test_run}.png')
+        plt.close()
+
+    def plot_components_predictions(self, ticker, test_run, component, component_predictions, path) -> None:
+        plt.figure(figsize=(16, 9))
+        plt.title(f'{ticker} forecasting outcome - test run {test_run} - component {component}')
+        plt.plot(self.__test_runs_components.get(ticker).get(test_run).get(component).tail(
+            component_predictions.shape[0]),
+            label=f'adj_close_{component}' if not self.__config.enx_data else f'trade_price_{component}',
+            color=self.data_plot_colors[0])
+        plt.plot(pd.Series(
+            component_predictions.flatten(),
+            index=self.__test_runs_components.get(ticker).get(test_run).get(component).tail(
+                component_predictions.shape[0]).index
+        ), label='model_predictions', color=self.model_predictions_plot_color)
+        plt.legend(loc='best')
+        plt.grid(True)
+        plt.savefig(f'{path}/test_run_{test_run}_{component}.png')
         plt.close()
 
     # Utility method.
@@ -542,16 +559,18 @@ class DataManager:
                                                          .get(test_run))
             reconstructed_predictions = self.reconstruct_predictions(ticker, test_run,
                                                                      self.__test_runs_predictions.get(ticker)
-                                                                     .get(test_run))
+                                                                     .get(test_run),
+                                                                     predictions_png_path)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
             self.export_predictions(ticker, test_run, reconstructed_predictions, predictions_metrics,
                                     backtracked_predictions_aes)
             self.plot_predictions(ticker, test_run, reconstructed_predictions, predictions_png_path)
 
-    def reconstruct_predictions(self, ticker, test_run, components_predictions) -> np.ndarray:
+    def reconstruct_predictions(self, ticker, test_run, components_predictions, path) -> np.ndarray:
         predictions = [0] * len(components_predictions.get('residue'))
         for component in components_predictions.keys():
+            self.plot_components_predictions(ticker, test_run, component, components_predictions.get(component), path)
             component_scaler = self.__test_runs_components_scalers.get(ticker).get(test_run).get(component)
             component_scaler.inverse_transform(components_predictions.get(component))
             components_predictions.update({
