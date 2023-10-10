@@ -97,12 +97,12 @@ class DataManager:
     def plot_predictions(self, ticker, test_run, predictions, path) -> None:
         plt.figure(figsize=(16, 9))
         plt.title(f'{ticker} forecasting outcome - test run {test_run}')
-        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run),
+        plt.plot(self.__test_runs_dataframes.get(ticker).get(test_run).tail(predictions.shape[0]),
                  label=('adj_close' if not self.__config.enx_data else 'trade_price'),
                  color=self.data_plot_colors[0])
         plt.plot(pd.Series(
             predictions.flatten(),
-            index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:]
+            index=self.__test_runs_dataframes.get(ticker).get(test_run).tail(predictions.shape[0]).index
         ), label='model_predictions', color=self.model_predictions_plot_color)
         plt.legend(loc='best')
         plt.grid(True)

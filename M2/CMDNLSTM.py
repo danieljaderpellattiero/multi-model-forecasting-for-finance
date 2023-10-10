@@ -25,8 +25,6 @@ class CMDNLSTM:
         self.__model_metric = MetricMSE()
         self.__loss_function = LossMSE()
         self.__activation = tanh
-        self.__dropout = 0.2
-        self.__recurrent_dropout = 0.2
         self.__optimizer = Adam(learning_rate=1e-3)
         self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
         self.__reduce = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, mode='auto')

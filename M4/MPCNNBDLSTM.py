@@ -22,8 +22,8 @@ class MPCNNBDLSTM:
         self.__loss_function = LossMSE()
         self.__activation_functions = [relu, tanh]
         self.__recurrent_activation = sigmoid
-        self.__dropout = 0.5
-        self.__recurrent_dropout = 0.5
+        self.__dropout = 0.2
+        self.__recurrent_dropout = 0.2
         self.__model_metric = MetricMAE()
         self.__optimizer = Adam(learning_rate=1e-3)
         self.__early_stopper = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=50, mode='auto')
@@ -47,31 +47,31 @@ class MPCNNBDLSTM:
         data_source = Input(shape=(dataset_shape[1], 1), name='source')
         p1_cnn_l1 = Conv1D(128, kernel_size=2, strides=1, activation=self.__activation_functions[0],
                            name='p1_cnn_1')(data_source)
-        p1_cnn_l2 = Conv1D(256, kernel_size=4, strides=1, activation=self.__activation_functions[0],
+        p1_cnn_l2 = Conv1D(256, kernel_size=2, strides=1, activation=self.__activation_functions[0],
                            name='p1_cnn_2')(p1_cnn_l1)
         p1_cnn_mxp_l1 = MaxPooling1D(pool_size=2, name='p1_cnn_mxp_1')(p1_cnn_l2)
         p2_cnn_l1 = Conv1D(128, kernel_size=2, strides=1, activation=self.__activation_functions[0],
                            name='p2_cnn_1')(data_source)
-        p2_cnn_l2 = Conv1D(256, kernel_size=4, strides=1, activation=self.__activation_functions[0],
+        p2_cnn_l2 = Conv1D(256, kernel_size=2, strides=1, activation=self.__activation_functions[0],
                            name='p2_cnn_2')(p2_cnn_l1)
         p2_cnn_mxp_l1 = MaxPooling1D(pool_size=2, name='p2_cnn_mxp_1')(p2_cnn_l2)
         p3_cnn_l1 = Conv1D(128, kernel_size=2, strides=1, activation=self.__activation_functions[0],
                            name='p3_cnn_1')(data_source)
-        p3_cnn_l2 = Conv1D(256, kernel_size=4, strides=1, activation=self.__activation_functions[0],
+        p3_cnn_l2 = Conv1D(256, kernel_size=2, strides=1, activation=self.__activation_functions[0],
                            name='p3_cnn_2')(p3_cnn_l1)
         p3_cnn_mxp_l1 = MaxPooling1D(pool_size=2, name='p3_cnn_mxp_1')(p3_cnn_l2)
         p1_bdlstm_l1 = Bidirectional(LSTM(400, activation=self.__activation_functions[1], return_sequences=False,
                                           recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
-                                          recurrent_dropout=self.__recurrent_dropout, name='p1_bdlstm_1'),
-                                     merge_mode='concat')(p1_cnn_mxp_l1)
+                                          recurrent_dropout=self.__recurrent_dropout),
+                                     merge_mode='concat', name='p1_bdlstm_1')(p1_cnn_mxp_l1)
         p2_bdlstm_l1 = Bidirectional(LSTM(400, activation=self.__activation_functions[1], return_sequences=False,
                                           recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
-                                          recurrent_dropout=self.__recurrent_dropout, name='p2_bdlstm_1'),
-                                     merge_mode='concat')(p2_cnn_mxp_l1)
+                                          recurrent_dropout=self.__recurrent_dropout),
+                                     merge_mode='concat', name='p2_bdlstm_1')(p2_cnn_mxp_l1)
         p3_bdlstm_l1 = Bidirectional(LSTM(400, activation=self.__activation_functions[1], return_sequences=False,
                                           recurrent_activation=self.__recurrent_activation, dropout=self.__dropout,
-                                          recurrent_dropout=self.__recurrent_dropout, name='p3_bdlstm_1'),
-                                     merge_mode='concat')(p3_cnn_mxp_l1)
+                                          recurrent_dropout=self.__recurrent_dropout),
+                                     merge_mode='concat', name='p3_bdlstm_1')(p3_cnn_mxp_l1)
         p1_dense_l1 = Dense(32, activation=None, name='p1_dense_1')(p1_bdlstm_l1)
         p1_dense_l2 = Dense(1, activation=None, name='p1_dense_2')(p1_dense_l1)
         p2_dense_l1 = Dense(32, activation=None, name='p2_dense_1')(p2_bdlstm_l1)
