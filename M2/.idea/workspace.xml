@@ -6,13 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="f0351019-eef3-47a2-ba25-b00a38b40a81" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMDNLSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/CMDNLSTM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M3/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M3/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M4/DataManager.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M4/DataManager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M4/MPCNNBDLSTM.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M4/MPCNNBDLSTM.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../M4/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../M4/Main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MultiModel/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../MultiModel/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MultiModel/Ensemble.py" beforeDir="false" afterPath="$PROJECT_DIR$/../MultiModel/Ensemble.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../MultiModel/Main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../MultiModel/Main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -6,6 +6,7 @@ import pendulum as time
 import matplotlib.pyplot as plt
 
 from colorama import Fore, Style
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
 
 matplotlib.use('Agg')
@@ -18,8 +19,8 @@ class Ensemble:
     models_predictions_path = './models_predictions'
     ensembling_methods = ['unweighted', 'statically_weighted', 'dynamically_weighted']
     data_plot_color = 'royalblue'
-    ensembled_predictions_plot_color = 'orchid'
-    models_predictions_plot_colors = ['limegreen', 'coral', 'gold']
+    ensembled_predictions_plot_color = 'magenta'
+    models_predictions_plot_colors = ['limegreen', 'coral', 'gold', 'deeppink']
 
     def __init__(self, enx_data, enx_data_frequency, test_runs, static_ensembling_metric, tickers, models_names
                  ) -> None:
@@ -37,10 +38,10 @@ class Ensemble:
     def run(self) -> None:
         if self.import_dataframes():
             self.merge_predictions()
-            self.plot_predictions('single')
             self.calculate_ensembled_predictions()
-            self.plot_predictions('ensembled')
             self.export_predictions_metrics()
+            self.plot_predictions('single')
+            self.plot_predictions('ensembled')
         else:
             exit(1)
 
@@ -63,12 +64,14 @@ class Ensemble:
             for test_run in range(0, self.__test_runs):
                 if is_data_missing:
                     break
-                test_set_path = (f'{self.data_path}/{ticker}/test_run_{test_run}_test.csv' if not self.__enx_data else
-                                 f'{self.data_path}/{ticker}/test_run_{test_run}_test_{self.__enx_data_frequency}.csv')
-                if os.path.exists(test_set_path):
-                    test_set_dataframe = pd.read_csv(test_set_path, index_col=('Date' if not self.__enx_data else
-                                                                               'Trade_timestamp'), parse_dates=True)
-                    dataframes.update({test_run: test_set_dataframe})
+                dataframe_path = (f'{self.data_path}/{ticker}/test_run_{test_run}_adj_close.csv' if not self.__enx_data
+                                  else
+                                  f'{self.data_path}/{ticker}/test_run_{test_run}_trade_price_'
+                                  f'{self.__enx_data_frequency}.csv')
+                if os.path.exists(dataframe_path):
+                    dataframe = pd.read_csv(dataframe_path, index_col=('Date' if not self.__enx_data else
+                                                                       'Trade_timestamp'), parse_dates=True)
+                    dataframes.update({test_run: dataframe})
                 else:
                     is_data_missing = True
                     print(f'{Fore.LIGHTRED_EX} [ {self.__uuid} ] '
@@ -82,7 +85,7 @@ class Ensemble:
                                               f'{self.models_predictions_path}/{model}/{ticker}/'
                                               f'test_run_{test_run}_{self.__enx_data_frequency}.csv')
                     if os.path.exists(model_predictions_path):
-                        dataframe = pd.read_csv(model_predictions_path, encoding='utf-8', sep=',', decimal='.',
+                        dataframe = pd.read_csv(model_predictions_path, encoding='utf-8', sep=';', decimal=',',
                                                 index_col=('Date' if not self.__enx_data else 'Trade_timestamp'),
                                                 parse_dates=True)
                         dataframe = dataframe.add_prefix(f'{model}_')
@@ -102,13 +105,15 @@ class Ensemble:
 
     def merge_predictions(self) -> None:
         for ticker in self.__tickers:
+            target_dataframe = {}
             merged_dataframes = {}
             for test_run in range(0, self.__test_runs):
                 dataframe = pd.concat(self.__models_predictions.get(ticker).get(test_run), axis=1)
                 dataframe.dropna(axis=0, how='any', inplace=True)
                 merged_dataframes.update({test_run: dataframe})
+                target_dataframe.update({test_run: self.__data.get(ticker).get(test_run).tail(dataframe.shape[0])})
+            self.__data.update({ticker: target_dataframe})
             self.__models_predictions.update({ticker: merged_dataframes})
-        pass
 
     def plot_predictions(self, mode) -> None:
         for ticker in self.__tickers:
@@ -119,8 +124,9 @@ class Ensemble:
             for test_run in range(0, self.__test_runs):
                 day = (time.instance(self.__data.get(ticker).get(test_run).index[0])
                        .format('dddd Do [of] MMMM YYYY'))
-                title = f'{ticker} - {day} - test run {test_run} - {mode} predictions'
-                plt.figure(figsize=(16, 9))
+                title = (f'{ticker} - {day} - test run {test_run} - {mode} predictions' if self.__enx_data else
+                         f'{ticker} - test run {test_run} - {mode} predictions')
+                plt.figure(figsize=(24, 12))
                 plt.title(title)
                 plt.plot(self.__data.get(ticker).get(test_run),
                          label=('test_set_adj_close' if not self.__enx_data else 'test_set_trade_price'),
@@ -129,12 +135,13 @@ class Ensemble:
                     plt.plot(self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values'],
                              label=(f'{model}_forecasted_adj_close' if not self.__enx_data else
                                     f'{model}_forecasted_trade_price'),
-                             color=self.models_predictions_plot_colors[model_index])
+                             color=self.models_predictions_plot_colors[model_index],
+                             alpha=1.0 if mode == 'single' else 0.15)
                 if mode == 'ensembled':
                     for method_index, method in enumerate(self.ensembling_methods):
                         ensembled_predictions_plotted, = plt.plot(
                             self.__ensembled_predictions.get(ticker).get(test_run)[method],
-                            label=f'{method}', color=self.ensembled_predictions_plot_color)
+                            label=f'{method}', color=self.ensembled_predictions_plot_color, alpha=1.0)
                         plt.legend(loc='best')
                         plt.grid(True)
                         plt.savefig(f'{ticker_png_path}/test_run_{test_run}_{method[0:2]}.png' if not self.__enx_data
@@ -186,12 +193,31 @@ class Ensemble:
             if not os.path.exists(f'{self.results_path}/{ticker}'):
                 os.makedirs(f'{self.results_path}/{ticker}')
             for test_run in range(0, self.__test_runs):
-                metrics_dataframe = pd.DataFrame()
-                test_set_data = self.__data.get(ticker).get(test_run).iloc[
-                                -self.__ensembled_predictions.get(ticker).get(test_run).shape[0]:]
-                for method_index, method in enumerate(self.ensembling_methods):
-                    for metric in [mean_absolute_error, mean_absolute_percentage_error, mean_squared_error]:
-                        metrics_dataframe[f'{method[0:2]}_{metric.__name__}'] = pd.Series(
-                            metric(test_set_data, self.__ensembled_predictions.get(ticker).get(test_run)[method]))
-                metrics_dataframe.to_csv(f'{self.results_path}/{ticker}/test_run_{test_run}.csv', index=True,
-                                         encoding='utf-8', sep=';', decimal=',')
+                scaler = MinMaxScaler(copy=True, clip=False)
+                self.__data.get(ticker).get(test_run)[:] = scaler.fit_transform(
+                    self.__data.get(ticker).get(test_run).to_numpy(copy=True))
+                for method in self.ensembling_methods:
+                    self.__ensembled_predictions.get(ticker).get(test_run)[method][:] = (
+                        scaler.transform(
+                            self.__ensembled_predictions.get(ticker).get(test_run)[method].to_numpy(copy=True)
+                            .reshape(-1, 1))
+                    ).flatten()
+                for model in self.__models_names:
+                    self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values'][:] = (
+                        scaler.transform(
+                            self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values']
+                            .to_numpy(copy=True).reshape(-1, 1))
+                    ).flatten()
+                for metric in [mean_absolute_error, mean_absolute_percentage_error, mean_squared_error]:
+                    metric_dataframe = pd.DataFrame()
+                    for method_index, method in enumerate(self.ensembling_methods):
+                        metric_dataframe[f'{method[0:2]}_{metric.__name__}'] = pd.Series(
+                            metric(self.__data.get(ticker).get(test_run),
+                                   self.__ensembled_predictions.get(ticker).get(test_run)[method]))
+                    for model in self.__models_names:
+                        metric_dataframe[f'{model}_{metric.__name__}'] = pd.Series(
+                            metric(self.__data.get(ticker).get(test_run),
+                                   self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values']))
+                    metric_dataframe.to_csv(
+                        f'{self.results_path}/{ticker}/test_run_{test_run}_{metric.__name__}.csv',
+                        index=True, encoding='utf-8', sep=';', decimal=',')
