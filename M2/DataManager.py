@@ -25,7 +25,7 @@ class DataManager:
     images_path = './images'
     predictions_path = './predictions'
     data_plot_colors = ['royalblue', 'goldenrod', 'coral']
-    model_predictions_plot_color = 'orchid'
+    model_predictions_plot_color = 'magenta'
 
     def __init__(self, model_config, tickers) -> None:
         self.__tickers = tickers
@@ -265,7 +265,9 @@ class DataManager:
                             if (os.path.exists(test_run_path) and os.path.exists(dataframe_path) and
                                     os.path.exists(learning_params_path)):
                                 dataframes.update({test_run: pd.read_csv(dataframe_path, index_col=(
-                                    'Date' if not self.__config.enx_data else 'Trade_timestamp'), parse_dates=True)})
+                                    'Date' if not self.__config.enx_data else 'Trade_timestamp'),
+                                                                         parse_dates=True, encoding='utf-8', sep=';',
+                                                                         decimal=',')})
                                 with open(learning_params_path, 'r') as file:
                                     time_series_components_learning_params.update({test_run: json.load(file)})
                                 time_series_components_tmp = {}
@@ -284,7 +286,8 @@ class DataManager:
                                                 component: pd.read_csv(component_path,
                                                                        index_col=('Date' if not self.__config.enx_data
                                                                                   else 'Trade_timestamp'),
-                                                                       parse_dates=True)})
+                                                                       parse_dates=True, encoding='utf-8', sep=';',
+                                                                       decimal=',')})
                                             time_series_components_scalers_tmp.update({
                                                 component: load(component_scaler_path)
                                             })
@@ -372,7 +375,8 @@ class DataManager:
                     dataframe_path = f'{test_run_path}/trade_price_{self.__config.enx_data_freq}.csv'
                     if os.path.exists(test_run_path) and os.path.exists(dataframe_path):
                         dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Trade_timestamp',
-                                                                 parse_dates=True)})
+                                                                 parse_dates=True, encoding='utf-8', sep=';',
+                                                                 decimal=',')})
                         self.plot_time_series(f'{ticker} original data subset - test run {test_run}',
                                               dataframes.get(test_run),
                                               f'{ticker_png_path}/test_run_{test_run}.png')
@@ -452,7 +456,8 @@ class DataManager:
                     self.__test_runs_dataframes.get(ticker).get(test_run).to_csv(f'{data_child_path}/adj_close.csv' if
                                                                                  not self.__config.enx_data else
                                                                                  f'{data_child_path}/trade_price_'
-                                                                                 f'{self.__config.enx_data_freq}.csv')
+                                                                                 f'{self.__config.enx_data_freq}.csv',
+                                                                                 encoding='utf-8', sep=';', decimal=',')
                     with open(f'{data_child_path}/learning_params.json', 'w') as file:
                         json.dump(self.__test_runs_components_learning_params.get(ticker).get(test_run), file)
                     time_series_components_dataframes = {}
@@ -466,7 +471,8 @@ class DataManager:
                         })
                         time_series_components_dataframes.get(component).to_csv(
                             f'{data_child_path}/{component}.csv' if not self.__config.enx_data else
-                            f'{data_child_path}/{component}_{self.__config.enx_data_freq}.csv')
+                            f'{data_child_path}/{component}_{self.__config.enx_data_freq}.csv',
+                            encoding='utf-8', sep=';', decimal=',')
                         dump(self.__test_runs_components_scalers.get(ticker).get(test_run).get(component),
                              f'{data_child_path}/{component}_scaler.joblib' if not self.__config.enx_data else
                              f'{data_child_path}/{component}_scaler_{self.__config.enx_data_freq}.joblib')
@@ -486,27 +492,27 @@ class DataManager:
                         self.__test_runs_components.get(ticker).get(test_run).get(component).shape[0])
                     training_set_input, training_set_targets = self.df_to_timeseries(
                         (self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
-                            f'{periods[0].to_date_string()}':f'{periods[1].to_date_string()}']
+                         f'{periods[0].to_date_string()}':f'{periods[1].to_date_string()}']
                          if not self.__config.enx_data else
-                            self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[:training_split]),
+                         self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[:training_split]),
                         self.__test_runs_components_learning_params.get(ticker).get(test_run).get('windows_size')
                         [component_index]
                     )
                     validation_set_input, validation_set_targets = self.df_to_timeseries(
                         (self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
-                            f'{periods[1].add(days=1).to_date_string()}':f'{periods[2].to_date_string()}']
+                         f'{periods[1].add(days=1).to_date_string()}':f'{periods[2].to_date_string()}']
                          if not self.__config.enx_data else
-                            self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[
-                            training_split:validation_split]),
+                         self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[
+                         training_split:validation_split]),
                         self.__test_runs_components_learning_params.get(ticker).get(test_run).get('windows_size')
                         [component_index]
                     )
                     test_set_input, test_set_targets = self.df_to_timeseries(
                         (self.__test_runs_components.get(ticker).get(test_run).get(component).loc[
-                            f'{periods[2].add(days=1).to_date_string()}':f'{periods[3].to_date_string()}']
+                         f'{periods[2].add(days=1).to_date_string()}':f'{periods[3].to_date_string()}']
                          if not self.__config.enx_data else
-                            self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[
-                                validation_split:]),
+                         self.__test_runs_components.get(ticker).get(test_run).get(component).iloc[
+                         validation_split:]),
                         self.__test_runs_components_learning_params.get(ticker).get(test_run).get('windows_size')
                         [component_index]
                     )
@@ -561,6 +567,11 @@ class DataManager:
                                                                      self.__test_runs_predictions.get(ticker)
                                                                      .get(test_run),
                                                                      predictions_png_path)
+            predictions_metrics.update({
+                'mean_absolute_percentage_error': mean_absolute_percentage_error(
+                    self.__test_runs_dataframes.get(ticker).get(test_run).tail(reconstructed_predictions.shape[0]),
+                    reconstructed_predictions)
+            })
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
             self.export_predictions(ticker, test_run, reconstructed_predictions, predictions_metrics,
@@ -577,15 +588,13 @@ class DataManager:
                 component: np.array(components_predictions.get(component)).flatten()
             })
         for index in range(len(predictions)):
-            predictions_index = len(predictions) - index - 1
             for component in components_predictions.keys():
-                component_index = len(components_predictions.get(component)) - index - 1
-                predictions[predictions_index] += components_predictions.get(component)[component_index]
+                predictions[index] += components_predictions.get(component)[index]
         return np.array(predictions).reshape(-1, 1)
 
     def calculate_metrics(self, ticker, test_run, components_predictions) -> dict:
         metrics = {}
-        for metric in [mean_absolute_error, mean_absolute_percentage_error, mean_squared_error]:
+        for metric in [mean_absolute_error, mean_squared_error]:
             partial_metrics = np.zeros((len(components_predictions.keys()),), dtype=float)
             for component_index, component in enumerate(components_predictions.keys()):
                 partial_metrics[component_index] = metric(
@@ -593,6 +602,7 @@ class DataManager:
                     components_predictions.get(component)
                 )
             metrics.update({metric.__name__: np.mean(partial_metrics)})
+        metrics.update({'root_mean_squared_error': np.sqrt(metrics.get('mean_squared_error'))})
         return metrics
 
     def export_predictions(self, ticker, test_run, predictions, predictions_metrics, backtrack_aes) -> None:
@@ -605,8 +615,9 @@ class DataManager:
             'mae': predictions_metrics.get('mean_absolute_error'),
             'mape': predictions_metrics.get('mean_absolute_percentage_error'),
             'mse': predictions_metrics.get('mean_squared_error'),
+            'rmse': predictions_metrics.get('root_mean_squared_error')
         }, index=self.__test_runs_dataframes.get(ticker).get(test_run).index[-predictions.shape[0]:])
         model_predictions.to_csv((f'{predictions_path}/test_run_{test_run}.csv' if not self.__config.enx_data else
                                   f'{predictions_path}/test_run_{test_run}_{self.__config.enx_data_freq}.csv'),
-                                 encoding='utf-8', sep=',', decimal=',',
+                                 encoding='utf-8', sep=';', decimal=',',
                                  index_label='Date' if not self.__config.enx_data else 'Trade_timestamp')

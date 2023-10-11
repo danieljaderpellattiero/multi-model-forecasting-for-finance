@@ -25,7 +25,7 @@ class DataManager:
     images_path = './images'
     predictions_path = './predictions'
     data_plot_colors = ['royalblue', 'goldenrod', 'coral']
-    model_predictions_plot_color = 'orchid'
+    model_predictions_plot_color = 'magenta'
 
     def __init__(self, model_config, tickers) -> None:
         self.__tickers = tickers
@@ -190,18 +190,22 @@ class DataManager:
                                 dataframes.update({test_run: pd.read_csv(dataframe_path,
                                                                          index_col=('Date' if not self.__config.enx_data
                                                                                     else 'Trade_timestamp'),
-                                                                         parse_dates=True)})
+                                                                         parse_dates=True, encoding='utf-8', sep=';',
+                                                                         decimal=',')})
                                 processed_dataframes.update({
                                     test_run: {
                                         'training': pd.read_csv(training_set_path,
                                                                 index_col=('Date' if not self.__config.enx_data
-                                                                           else 'Trade_timestamp'), parse_dates=True),
+                                                                           else 'Trade_timestamp'), parse_dates=True,
+                                                                encoding='utf-8', sep=';', decimal=','),
                                         'validation': pd.read_csv(validation_set_path,
                                                                   index_col=('Date' if not self.__config.enx_data
-                                                                             else 'Trade_timestamp'), parse_dates=True),
+                                                                             else 'Trade_timestamp'), parse_dates=True,
+                                                                  encoding='utf-8', sep=';', decimal=','),
                                         'test': pd.read_csv(test_set_path,
                                                             index_col=('Date' if not self.__config.enx_data
-                                                                       else 'Trade_timestamp'), parse_dates=True),
+                                                                       else 'Trade_timestamp'), parse_dates=True,
+                                                            encoding='utf-8', sep=';', decimal=','),
                                     }
                                 })
                                 scalers.update({test_run: load(scaler_path)})
@@ -379,16 +383,20 @@ class DataManager:
                         os.makedirs(data_child_path)
                     self.__test_runs_dataframes.get(ticker).get(test_run).to_csv(
                         f'{data_child_path}/adj_close.csv' if not self.__config.enx_data else
-                        f'{data_child_path}/trade_price_{self.__config.enx_data_freq}.csv')
+                        f'{data_child_path}/trade_price_{self.__config.enx_data_freq}.csv',
+                        encoding='utf-8', sep=';', decimal=',')
                     self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('training').to_csv(
                         f'{data_child_path}/training.csv' if not self.__config.enx_data else
-                        f'{data_child_path}/training_{self.__config.enx_data_freq}.csv')
+                        f'{data_child_path}/training_{self.__config.enx_data_freq}.csv',
+                        encoding='utf-8', sep=';', decimal=',')
                     self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('validation').to_csv(
                         f'{data_child_path}/validation.csv' if not self.__config.enx_data else
-                        f'{data_child_path}/validation_{self.__config.enx_data_freq}.csv')
+                        f'{data_child_path}/validation_{self.__config.enx_data_freq}.csv',
+                        encoding='utf-8', sep=';', decimal=',')
                     self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test').to_csv(
                         f'{data_child_path}/test.csv' if not self.__config.enx_data else
-                        f'{data_child_path}/test_{self.__config.enx_data_freq}.csv')
+                        f'{data_child_path}/test_{self.__config.enx_data_freq}.csv',
+                        encoding='utf-8', sep=';', decimal=',')
                     dump(self.__test_runs_scalers.get(ticker).get(test_run),
                          f'{data_child_path}/scaler.joblib' if not self.__config.enx_data else
                          f'{data_child_path}/scaler_{self.__config.enx_data_freq}.joblib')
@@ -473,28 +481,25 @@ class DataManager:
     def reconstruct_and_export_predictions(self, ticker) -> None:
         for test_run in range(0, self.__config.tr_amt):
             scaler = self.__test_runs_scalers.get(ticker).get(test_run)
+            predictions = np.array(self.__test_runs_predictions.get(ticker).get(test_run)).reshape(-1, 1)
+            target_values = self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets').copy()
             predictions_png_path = f'{self.images_path}/predictions/{ticker}'
             if not os.path.exists(predictions_png_path):
                 os.makedirs(predictions_png_path)
-            predictions = np.array(self.__test_runs_predictions.get(ticker).get(test_run)).reshape(-1, 1)
-            predictions_mae = mean_absolute_error(
-                self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
-                predictions)
-            predictions_mape = mean_absolute_percentage_error(
-                self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
-                predictions)
-            predictions_mse = mean_squared_error(
-                self.__test_runs_datasets.get(ticker).get(test_run).get('test').get('targets'),
-                predictions)
+            predictions_mae = mean_absolute_error(target_values, predictions)
+            predictions_mse = mean_squared_error(target_values, predictions)
+            predictions_rmse = np.sqrt(predictions_mse)
             scaler.inverse_transform(predictions)
+            scaler.inverse_transform(target_values)
+            predictions_mape = mean_absolute_percentage_error(target_values, predictions)
             backtracked_predictions_aes = self.calculate_backtrack_aes(
                 self.__test_runs_backtracked_predictions.get(ticker).get(test_run))
             self.export_predictions(ticker, test_run, predictions, predictions_mae, predictions_mape,
-                                    predictions_mse, backtracked_predictions_aes)
+                                    predictions_mse, predictions_rmse, backtracked_predictions_aes)
             self.plot_predictions(ticker, test_run, predictions, predictions_png_path)
 
     def export_predictions(self, ticker, test_run, predictions, predictions_mae, predictions_mape, predictions_mse,
-                           backtracked_aes) -> None:
+                           predictions_rmse, backtracked_aes) -> None:
         predictions_path = f'{self.predictions_path}/{ticker}'
         if not os.path.exists(predictions_path):
             os.makedirs(predictions_path)
@@ -504,9 +509,10 @@ class DataManager:
             'mae': predictions_mae,
             'mape': predictions_mape,
             'mse': predictions_mse,
+            'rmse': predictions_rmse
         }, index=self.__test_runs_processed_dataframes.get(ticker).get(test_run).get('test')
                  .index[-predictions.shape[0]:])
         model_predictions.to_csv((f'{predictions_path}/test_run_{test_run}.csv' if not self.__config.enx_data else
                                   f'{predictions_path}/test_run_{test_run}_{self.__config.enx_data_freq}.csv'),
-                                 encoding='utf-8', sep=',', decimal=',',
+                                 encoding='utf-8', sep=';', decimal=',',
                                  index_label='Date' if not self.__config.enx_data else 'Trade_timestamp')

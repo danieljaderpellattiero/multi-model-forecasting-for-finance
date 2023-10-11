@@ -21,6 +21,12 @@ class Ensemble:
     data_plot_color = 'royalblue'
     ensembled_predictions_plot_color = 'magenta'
     models_predictions_plot_colors = ['limegreen', 'coral', 'gold', 'deeppink']
+    metrics_dict = {
+        'mean_absolute_error': 'mae',
+        'mean_absolute_percentage_error': 'mape',
+        'mean_squared_error': 'mse',
+        'root_mean_squared_error': 'rmse'
+    }
 
     def __init__(self, enx_data, enx_data_frequency, test_runs, static_ensembling_metric, tickers, models_names
                  ) -> None:
@@ -38,10 +44,10 @@ class Ensemble:
     def run(self) -> None:
         if self.import_dataframes():
             self.merge_predictions()
-            self.calculate_ensembled_predictions()
-            self.export_predictions_metrics()
             self.plot_predictions('single')
+            self.calculate_ensembled_predictions()
             self.plot_predictions('ensembled')
+            self.export_predictions_metrics()
         else:
             exit(1)
 
@@ -70,7 +76,8 @@ class Ensemble:
                                   f'{self.__enx_data_frequency}.csv')
                 if os.path.exists(dataframe_path):
                     dataframe = pd.read_csv(dataframe_path, index_col=('Date' if not self.__enx_data else
-                                                                       'Trade_timestamp'), parse_dates=True)
+                                                                       'Trade_timestamp'), parse_dates=True,
+                                            encoding='utf-8', sep=';', decimal=',')
                     dataframes.update({test_run: dataframe})
                 else:
                     is_data_missing = True
@@ -85,9 +92,9 @@ class Ensemble:
                                               f'{self.models_predictions_path}/{model}/{ticker}/'
                                               f'test_run_{test_run}_{self.__enx_data_frequency}.csv')
                     if os.path.exists(model_predictions_path):
-                        dataframe = pd.read_csv(model_predictions_path, encoding='utf-8', sep=';', decimal=',',
-                                                index_col=('Date' if not self.__enx_data else 'Trade_timestamp'),
-                                                parse_dates=True)
+                        dataframe = pd.read_csv(model_predictions_path, index_col=('Date' if not self.__enx_data else
+                                                                                   'Trade_timestamp'), parse_dates=True,
+                                                encoding='utf-8', sep=';', decimal=',')
                         dataframe = dataframe.add_prefix(f'{model}_')
                         models_predictions_dataframes.append(dataframe)
                     else:
@@ -182,7 +189,7 @@ class Ensemble:
                     models_predictions = np.zeros((len(self.__models_names),))
                     for model_index, model in enumerate(self.__models_names):
                         models_predictions[model_index] = row[f'{model}_forecasted_values']
-                    for method_index, method in enumerate(self.ensembling_methods):
+                    for method in self.ensembling_methods:
                         predictions_dataframe.loc[row_index, method] = self.ensemble_predictions(
                             models_predictions, models_static_errors, models_dynamic_errors, method)
                 predictions.update({test_run: predictions_dataframe})
@@ -193,31 +200,32 @@ class Ensemble:
             if not os.path.exists(f'{self.results_path}/{ticker}'):
                 os.makedirs(f'{self.results_path}/{ticker}')
             for test_run in range(0, self.__test_runs):
+                dataframe = pd.DataFrame()
                 scaler = MinMaxScaler(copy=True, clip=False)
-                self.__data.get(ticker).get(test_run)[:] = scaler.fit_transform(
-                    self.__data.get(ticker).get(test_run).to_numpy(copy=True))
+                normalized_target_data = scaler.fit_transform(self.__data.get(ticker).get(test_run).to_numpy(copy=True))
                 for method in self.ensembling_methods:
-                    self.__ensembled_predictions.get(ticker).get(test_run)[method][:] = (
-                        scaler.transform(
-                            self.__ensembled_predictions.get(ticker).get(test_run)[method].to_numpy(copy=True)
-                            .reshape(-1, 1))
-                    ).flatten()
+                    normalized_prediction_data = scaler.transform(
+                        self.__ensembled_predictions.get(ticker).get(test_run)[method].to_numpy(copy=True)
+                        .reshape(-1, 1))
+                    for metric in [mean_absolute_error, mean_squared_error]:
+                        dataframe[f'{method[0:2]}_{self.metrics_dict.get(metric.__name__)}'] = pd.Series(
+                            metric(normalized_target_data, normalized_prediction_data))
+                    dataframe[f'{method[0:2]}_rmse'] = np.sqrt(dataframe[f'{method[0:2]}_mse'])
+                    dataframe[f'{method[0:2]}_mape'] = pd.Series(
+                        mean_absolute_percentage_error(
+                            self.__data.get(ticker).get(test_run),
+                            self.__ensembled_predictions.get(ticker).get(test_run)[method]))
                 for model in self.__models_names:
-                    self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values'][:] = (
-                        scaler.transform(
-                            self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values']
-                            .to_numpy(copy=True).reshape(-1, 1))
-                    ).flatten()
-                for metric in [mean_absolute_error, mean_absolute_percentage_error, mean_squared_error]:
-                    metric_dataframe = pd.DataFrame()
-                    for method_index, method in enumerate(self.ensembling_methods):
-                        metric_dataframe[f'{method[0:2]}_{metric.__name__}'] = pd.Series(
-                            metric(self.__data.get(ticker).get(test_run),
-                                   self.__ensembled_predictions.get(ticker).get(test_run)[method]))
-                    for model in self.__models_names:
-                        metric_dataframe[f'{model}_{metric.__name__}'] = pd.Series(
-                            metric(self.__data.get(ticker).get(test_run),
-                                   self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values']))
-                    metric_dataframe.to_csv(
-                        f'{self.results_path}/{ticker}/test_run_{test_run}_{metric.__name__}.csv',
-                        index=True, encoding='utf-8', sep=';', decimal=',')
+                    normalized_prediction_data = scaler.transform(
+                        self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values']
+                        .to_numpy(copy=True).reshape(-1, 1))
+                    for metric in [mean_absolute_error, mean_squared_error]:
+                        dataframe[f'{model}_{self.metrics_dict.get(metric.__name__)}'] = pd.Series(
+                            metric(normalized_target_data, normalized_prediction_data))
+                    dataframe[f'{model}_rmse'] = np.sqrt(dataframe[f'{model}_mse'])
+                    dataframe[f'{model}_mape'] = pd.Series(
+                        mean_absolute_percentage_error(
+                            self.__data.get(ticker).get(test_run),
+                            self.__models_predictions.get(ticker).get(test_run)[f'{model}_forecasted_values']))
+                dataframe.to_csv(f'{self.results_path}/{ticker}/test_run_{test_run}.csv',
+                                 index=True, encoding='utf-8', sep=';', decimal=',')
