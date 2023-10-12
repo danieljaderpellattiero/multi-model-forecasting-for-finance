@@ -88,7 +88,7 @@ class EuronextDataLoader:
                         begin, end = self.__config.get_test_run_schedules(trading_day, test_run)
                         dataframe = self.__dataframes.get(ticker).copy()[begin:end]
                         dataframe = dataframe.groupby(dataframe.index).agg({'trade_price': 'mean'})
-                        for resample in ['1s', '5s', '10s']:
+                        for resample in ['1s']:
                             dataframe_resampled = dataframe.resample(resample).mean().ffill()
                             training_split, validation_split = self.__config.get_test_run_splits(dataframe_resampled
                                                                                                  .shape[0])
@@ -99,9 +99,13 @@ class EuronextDataLoader:
                                               training_dataframe, validation_dataframe, test_dataframe,
                                               f'{ticker_images_path}/{trading_day.to_date_string()}'
                                               f'_test_run_{test_run}_{resample}.png')
-                            dataframe_resampled.to_csv(f'{datasets_path}/trade_price_{resample}.csv')
-                            training_dataframe.to_csv(f'{datasets_path}/training_{resample}.csv')
-                            validation_dataframe.to_csv(f'{datasets_path}/validation_{resample}.csv')
-                            test_dataframe.to_csv(f'{datasets_path}/test_{resample}.csv')
+                            dataframe_resampled.to_csv(f'{datasets_path}/trade_price_{resample}.csv',
+                                                       encoding='utf-8', sep=';', decimal=',')
+                            training_dataframe.to_csv(f'{datasets_path}/training_{resample}.csv',
+                                                      encoding='utf-8', sep=';', decimal=',')
+                            validation_dataframe.to_csv(f'{datasets_path}/validation_{resample}.csv',
+                                                        encoding='utf-8', sep=';', decimal=',')
+                            test_dataframe.to_csv(f'{datasets_path}/test_{resample}.csv',
+                                                  encoding='utf-8', sep=';', decimal=',')
                     exported_test_runs += 1
             exported_tickers += 1
