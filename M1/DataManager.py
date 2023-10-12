@@ -300,14 +300,16 @@ class DataManager:
                             os.path.exists(training_set_path) and os.path.exists(validation_set_path) and
                             os.path.exists(test_set_path)):
                         dataframes.update({test_run: pd.read_csv(dataframe_path, index_col='Trade_timestamp',
-                                                                 parse_dates=True)})
+                                                                 parse_dates=True, encoding='utf-8', sep=';',
+                                                                 decimal=',')})
                         processed_dataframes.update({
                             test_run: {
                                 'training': pd.read_csv(training_set_path, index_col='Trade_timestamp',
-                                                        parse_dates=True),
+                                                        parse_dates=True, encoding='utf-8', sep=';', decimal=','),
                                 'validation': pd.read_csv(validation_set_path, index_col='Trade_timestamp',
-                                                          parse_dates=True),
-                                'test': pd.read_csv(test_set_path, index_col='Trade_timestamp', parse_dates=True)
+                                                          parse_dates=True, encoding='utf-8', sep=';', decimal=','),
+                                'test': pd.read_csv(test_set_path, index_col='Trade_timestamp', parse_dates=True,
+                                                    encoding='utf-8', sep=';', decimal=',')
                             }
                         })
                         self.plot_dataset(f'{ticker} original data subset - {test_run}',
