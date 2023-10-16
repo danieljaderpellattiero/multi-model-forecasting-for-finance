@@ -143,7 +143,7 @@ class Ensemble:
                              label=(f'{model}_forecasted_adj_close' if not self.__enx_data else
                                     f'{model}_forecasted_trade_price'),
                              color=self.models_predictions_plot_colors[model_index],
-                             alpha=1.0 if mode == 'single' else 0.15)
+                             alpha=1.0 if mode == 'single' else 0.18)
                 if mode == 'ensembled':
                     for method_index, method in enumerate(self.ensembling_methods):
                         ensembled_predictions_plotted, = plt.plot(
