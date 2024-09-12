@@ -1,4 +1,4 @@
-# Multi-model forecasting for finance
+# Multi-model Forecasting for Finance
 
 ## Learning objectives and skills to be acquired
 
@@ -12,75 +12,66 @@ This will be followed by a critical evaluation of what has been learned in order
   
 Finally, a software that can effectively and efficiently combine these algorithms in order to improve their overall performance will be implemented.
 
-## Deep Learning models
+## Deep learning Models
 
-### WSAEs-LSTM ( model №1 )
-
-#### Paper
+### WSAEs-LSTM ~ №1
 
 - [Recurrent Neural Networks for Financial Time-Series modelling](https://ieeexplore.ieee.org/abstract/document/8545666)
 
-### CEEMDAN-LSTM ( model №2 )
-
-#### Papers
+### CEEMDAN-LSTM ~ №2
 
 - [Financial time series forecasting model based on CEEMDAN and LSTM](https://www.sciencedirect.com/science/article/abs/pii/S0378437118314985)
 
 - [Carbon price forecasting based on CEEMDAN and LSTM](https://www.sciencedirect.com/science/article/abs/pii/S0306261922000782?via=ihub)
 
-### CNN-LSTM ( model №3 )
-
-#### Paper
+### CNN-LSTM ~ №3
 
 - [A CNN–LSTM model for gold price time-series forecasting](https://link.springer.com/article/10.1007/s00521-020-04867-x)
 
-### MP-CNN-BDLSTM ( model №4 )
+### MP-CNN-BDLSTM ~ №4
 
-#### Paper
 
-- [Novel_Deep_Learning_Model_with_CNN_and_Bi-Directional_LSTM_for_Improved_Stock_Market_Index_Prediction](https://ieeexplore.ieee.org/document/8666592)
+- [Novel Deep Learning Model with CNN and Bi-Directional LSTM for Improved Stock Market Index Prediction](https://ieeexplore.ieee.org/document/8666592)
 
 ### How to use them
 
-1. Open the project folder using a Python IDE ( _preferably [PyCharm](https://www.jetbrains.com/pycharm/)_ ).
+1. Open the project folder using a Python IDE. (_preferably [PyCharm](https://www.jetbrains.com/pycharm/)_)
 2. Install the required dependencies.
-3. Open the `Main.py` file and insert, inside the second constructor parameter, all the desired stocks' tickers as strings ( _just like the pre-inserted ticker "^KS11"_ ).
+3. Open the `Main.py` file and insert, inside the second constructor parameter, all the desired stocks tickers as strings. (_just like the pre-inserted ticker "^KS11"_)
 4. Launch the model using the same file.
 
 ### Further notes
 
-- The models will print out step-by-step notifications in the terminal from which they are launched.
-- The models will locally save the stocks data, in order to allow multiple models to be built from them ( _data will be located inside the `./M[model_number]/data` folder_ ).
-- The models will locally save the deep learning models generated for each stock, so that they can be reloaded directly from the disk ( _models will be located inside the `./M[model_number]/models` folder_ ).
-- The models will locally export the graphs of each stocks datasets and the graphs of the respective forecasts ( _graphs will be located inside the `./M[model_number]/images/data-preprocessing` and `./M[model_number]/images/predictions` folders_ ).
-- The models will export in a csv file the forecasted values and all the error metrics needed to use the predictions of the various models jointly ( _csv files will be located inside the `./M[model_number]/predictions` folder_ ).
+- The models will print out step-by-step notifications in the terminal.
+- The models will locally save, for each stock, the downloaded data in order to allow multiple subsequent executions. (_data will be located inside the `./M[model_number]/data` folder_)
+- The models will locally save, for each stock, their parameters and weights to allow model reloading from disk. (_models configs will be located inside the `./M[model_number]/models` folder_)
+- The models will locally export, for each stock, graphs related to data preprocessing phase and forecasts. (_graphs will be located inside the `./M[model_number]/images/data-preprocessing` and `./M[model_number]/images/predictions` folders_)
+- The models will export in a csv file the forecasted values and the error metrics, which will be used by the Multi-model. (_csv files will be located inside the `./M[model_number]/predictions` folder_)
 
-> NdR: Models code documentation will be enriched at a later date.
+> Source code documentation will be enriched in the future.
 
 ## The Multi-model
 
-### How to use it
-
-> Assumption: Suppose we ran the models for 1 test run on the ^KS11 index.
+### How to use it (^KS11 example)
 
 1. Create inside `./MultiModel/data` a folder named `^KS11`.
-2. Place inside the aforementioned folder the stock data ( _data can be taken from `./M1/data/^KS11/test_run_[X]`\, taking care to add the "test\_run\_0\_" prefix to each csv file name_ ).
-3. Create inside `./MultiModel/models_predictions/M[model_number]` a folder named `^KS11` and place inside it ( them ) the respective predictions of each model ( _predictions can be taken from the `./M[model_number]/predictions/^KS11/test_run_[X]` folder_ ).
+2. Place inside the aforementioned folder the stock data. (_data can be taken from `./M1/data/^KS11/test_run_[X]`\, taking care to add the "test\_run\_0\_" prefix to each csv file name_)
+3. Create inside `./MultiModel/models_predictions/M[model_number]` a folder named `^KS11` and place inside it (them) the respective predictions of each model. (_predictions can be taken from the `./M[model_number]/predictions/^KS11/test_run_[X]` folder_)
 4. Run the Multi-model by launching the `./MultiModel/Main.py` file.
-5. The Multi-model will export the graphs for each stocks single and ensembled predictions ( _graphs will be located inside the `./MultiModel/images/^KS11/single_predictions` and `./MultiModel/images/^KS11/ensembled_predictions` folders_ ).
-6. The Multi-model will export in a csv file the metrics for each stocks single and ensembled predictions ( _csv files will be located inside the `./MultiModel/results/^KS11` folder_ ).
+5. The Multi-model will export, for each stock, graphs for the individual and ensembled predictions. (_graphs will be located inside the `./MultiModel/images/^KS11/single_predictions` and `./MultiModel/images/^KS11/ensembled_predictions` folders_)
+6. The Multi-model will export, for each stock, a csv file with the metrics for the individual and ensembled predictions. (_csv files will be located inside the `./MultiModel/results/^KS11` folder_)
 
-> NdR: I address the term "single predictions" to the ones generated from the single models, whereas the "ensembled" are the ones generated by jointly using the models ( _the way the models predictions are combined is described thoroughly in the thesis_ ).
+> The "individual predictions" are those generated by each individual model, whereas the "ensembled" ones are those generated by jointly using the models. (_the way the models predictions are combined is described thoroughly in the thesis_)
 
 ## Euronext Data Loader
 
-This component has been developed to produce the deep learning models datasets from data provided by the Market Analysis team of the Italian Stock Exchange.  
-The original data received and the predictions derived on it are subject to a non-disclosure agreement, therefore will not be uploaded into the repository.  
-Nevertheless, the models were developed to be run on any financial instrument that can be found in Yahoo Finance.
+It is a Python module that allows to transform the raw data provided by the Euronext Milan Group into datasets that can be used to train the deep learning models.  
+The provided market data and the derived predictions are subject to a non-disclosure agreement, therefore will not be uploaded into the repository.  
+Nevertheless, the models were meant to be run on any financial instrument that can be found in Yahoo Finance.
 
-### The data
+### Euronext Data
 
-The Market Analysis team provided Limit Order Book (intra-day) data from 1st September 2022 to 24th March 2023, at millisecond intervals, for the following basket of financial instruments:
+The Markets Analysis Team provided us Limit Order Book (intra-day) data from 1st September 2022 to 24th March 2023, at millisecond intervals, for the following basket of financial instruments:
 
 1. **Intesa Sanpaolo** - IT0000072618
 2. **Enel** - IT0003128367
@@ -93,34 +84,33 @@ The Market Analysis team provided Limit Order Book (intra-day) data from 1st Sep
 9. **Moncler** - IT0004965148
 10. **Poste Italiane** - IT0003796171
 
-### The datasets
+### Data preprocessing
 
-For each financial instrument an amount of "test runs", three for every trading day within the aforementioned interval, is generated ( _1 trading day equals to 3 test runs_ ).
-Because of the data amount and granularity the three test runs are extracted from the single trading day, according to the subsequent schema:
+For each financial instrument an amount of _test runs_ (three for every trading day) is generated.  
+Each trading day is therefore split according to the following schema:  
 
-- **1<sup>st</sup> test run:** trading data included between **09:00 - 12:00**
-- **2<sup>nd</sup> test run:** trading data included between **12:00 - 15:00**
-- **3<sup>rd</sup> test run:** trading data included between **15:00 - 18:00**
+- **1st test run:** trading data within **09:00 - 12:00**
+- **2nd test run:** trading data within **12:00 - 15:00**
+- **3rd test run:** trading data within **15:00 - 18:00**
 
-> NdR: It is worth noticing that negotiations on the Euronext Milan market take place with the following schedules:
-> 
-> - Opening auctions<sup>[1]</sup> : 08:00 - 09:00 ( 09:00:00 - 09:00:59 )
-> - Continuous negotiation : 09:00 - 17:30
-> - Closing auctions<sup>[2]</sup> : 17:30 - 17:35 ( 17:35:00 - 17:35:59 )
-> - Trading at the closing auction price<sup>[3]</sup> : 17:35 ( 17:35:00 - 17:35:59 ) - 17:42
+> Negotiations on the Euronext Milan market take place with the following schedules:
 >
-> > [1-2] _Pre-auction, validation, opening and conclusion of contracts._  
-> > [3] _Proposal entry phase, negotiation phase._
+> - Opening auctions*: 08:00 - 09:00 (09:00:00 - 09:00:59)
+> - Continuous negotiation: 09:00 - 17:30
+> - Closing auctions*: 17:30 - 17:35 (17:35:00 - 17:35:59)
+> - Trading at the closing auction price**: 17:35 (17:35:00 - 17:35:59) - 17:42
+>
+> \* _Pre-auction, validation, opening and conclusion of contracts._  
+> \*\* _Proposal entry phase, negotiation phase._
 
-In order to train the deep-learning models each test run is further split into three datasets, according to the following proportions:
+In order to train the models each test run is further split into three datasets, according to the following percentages:
 
-- **Training set: 80%** of the test run data
-- **Validation set: 15%** of the test run data
-- **Test set: 5%** of the test run data
+- **Training set - 80%**
+- **Validation set - 15%**
+- **Test set - 5%**
 
-### The alternative datasets
+### Open, High, Low, Close (OHLC) data
 
-The forecasts and graphs included in my thesis were generated by applying the models on the Korea Composite Stock Price Index (KOSPI, ^KS11).  
-Daily OHLC data from January 1<sup>st</sup> 2015 was used to craft three test runs on which to run the models.  
-Each test run consists of 3 years of training data, 10 months of validation data and 5 months of test data (a 70-20-10 ratio was followed).  
+The forecasts and graphs included in my thesis were generated on the Korea Composite Stock Price Index. (KOSPI, ^KS11)  
+Daily OHLC data from January 1st 2015 was used to build the test runs, each of them comprising 3 years of training data, 10 months of validation data and 5 months of test data. (70-20-10 ratio)  
 The beginning of each test run is shifted 5 months ahead relatively to its preceding.
